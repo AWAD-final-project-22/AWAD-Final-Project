@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import QueryClientProviders from '@/libs/QueryClientProviders';
 import StoreProvider from '@/libs/StoreProvider';
+import GoogleAuthProvider from '@/libs/GoogleAuthProvider';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -27,14 +28,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  if (!googleClientId) {
+    // Hoặc hiển thị một thông báo lỗi thân thiện hơn
+    throw new Error('Google Client ID is not configured');
+  }
   return (
-    <html lang='en'>
+    <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <StoreProvider>
           <QueryClientProviders>
             <StyledComponentsRegistry>
               <AntdRegistry>
-                <App>{children}</App>
+                <GoogleAuthProvider>
+                  <App>{children}</App>
+                </GoogleAuthProvider>
               </AntdRegistry>
             </StyledComponentsRegistry>
           </QueryClientProviders>
@@ -43,4 +51,3 @@ export default function RootLayout({
     </html>
   );
 }
-
