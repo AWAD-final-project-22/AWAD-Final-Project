@@ -24,10 +24,29 @@ import { GoogleSignInUseCase } from './application/use-cases/auth/google-signin.
     JwtAuthGuard,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     PrismaService,
-    { provide: LoginUseCase, useFactory: (userRepo, pwdSvc, tokenSvc) => new LoginUseCase(userRepo, pwdSvc, tokenSvc), inject: ['UserRepository', 'PasswordService', 'TokenService'] },
-    { provide: RegisterUseCase, useFactory: (userRepo, pwdSvc) => new RegisterUseCase(userRepo, pwdSvc), inject: ['UserRepository', 'PasswordService'] },
-    { provide: RefreshTokenUseCase, useFactory: (userRepo, tokenSvc, pwdSvc) => new RefreshTokenUseCase(userRepo, tokenSvc, pwdSvc), inject: ['UserRepository', 'TokenService', 'PasswordService'] },
-    { provide: GoogleSignInUseCase, useFactory: (userRepo, tokenSvc, pwdSvc) => new GoogleSignInUseCase(userRepo, tokenSvc, pwdSvc, process.env.GOOGLE_CLIENT_ID ?? ''), inject: ['UserRepository', 'TokenService', 'PasswordService'] },
+    {
+      provide: LoginUseCase,
+      useFactory: (userRepo, pwdSvc, tokenSvc) =>
+        new LoginUseCase(userRepo, pwdSvc, tokenSvc),
+      inject: ['UserRepository', 'PasswordService', 'TokenService'],
+    },
+    {
+      provide: RegisterUseCase,
+      useFactory: (userRepo, pwdSvc) => new RegisterUseCase(userRepo, pwdSvc),
+      inject: ['UserRepository', 'PasswordService'],
+    },
+    {
+      provide: RefreshTokenUseCase,
+      useFactory: (userRepo, tokenSvc, pwdSvc) =>
+        new RefreshTokenUseCase(userRepo, tokenSvc, pwdSvc),
+      inject: ['UserRepository', 'TokenService', 'PasswordService'],
+    },
+    {
+      provide: GoogleSignInUseCase,
+      useFactory: (userRepo, tokenSvc, pwdSvc) =>
+        new GoogleSignInUseCase(userRepo, tokenSvc, pwdSvc),
+      inject: ['UserRepository', 'TokenService', 'PasswordService'],
+    },
     { provide: 'UserRepository', useClass: UserRepositoryImpl },
     { provide: 'PasswordService', useClass: PasswordService },
     { provide: 'TokenService', useClass: TokenService },
