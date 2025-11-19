@@ -87,7 +87,6 @@ export class AuthController {
                 const message = (err.getResponse() as any)?.message ?? err.message;
                 throw new HttpException({ status: 'error', message, data: null }, status);
             }
-            // map generic errors to 401 for invalid token / account issues
             throw new HttpException({ status: 'error', message: err.message ?? 'Unauthorized', data: null }, HttpStatus.UNAUTHORIZED);
         }
     }
