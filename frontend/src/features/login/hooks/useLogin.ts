@@ -1,10 +1,10 @@
-import { useAppDispatch } from '@/redux/hooks';
-import { setAccessToken } from '@/redux/slices/authSlice';
-import { App, Form } from 'antd';
-import { useRouter } from 'next/navigation';
-import { LoginFormValues } from '../interfaces';
-import { useMutationLogin, useMutationGoogleLogin } from './loginAPI';
-import { CredentialResponse } from '@react-oauth/google';
+import { useAppDispatch } from "@/redux/hooks";
+import { setAccessToken } from "@/redux/slices/authSlice";
+import { App, Form } from "antd";
+import { useRouter } from "next/navigation";
+import { LoginFormValues } from "../interfaces";
+import { useMutationLogin, useMutationGoogleLogin } from "./loginAPI";
+import { CredentialResponse } from "@react-oauth/google";
 
 export const useLogin = () => {
   const { notification } = App.useApp();
@@ -15,15 +15,15 @@ export const useLogin = () => {
   const { mutateAsync: login, isPending: isLoading } = useMutationLogin({
     onSuccess: () => {
       notification.success({
-        message: 'Login Successful',
-        description: 'You have successfully logged in.',
+        message: "Login Successful",
+        description: "You have successfully logged in.",
       });
     },
     onError: (error) => {
       notification.error({
-        message: 'Login Failed',
+        message: "Login Failed",
         description:
-          (error as Error).message || 'An error occurred during login.',
+          (error as Error).message || "An error occurred during login.",
       });
     },
   });
@@ -33,17 +33,17 @@ export const useLogin = () => {
       onSuccess: (response) => {
         dispatch(setAccessToken(response?.data?.accessToken));
         notification.success({
-          message: 'Login Successful',
-          description: 'You have successfully logged in with Google.',
+          message: "Login Successful",
+          description: "You have successfully logged in with Google.",
         });
-        router.push('/');
+        router.push("/");
       },
       onError: (error) => {
         notification.error({
-          message: 'Google Login Failed',
+          message: "Google Login Failed",
           description:
             (error as Error).message ||
-            'An error occurred during Google login.',
+            "An error occurred during Google login.",
         });
       },
     });
@@ -69,9 +69,9 @@ export const useLogin = () => {
       dispatch(setAccessToken(response?.data?.accessToken));
       // localStorage.setItem('refreshToken', response?.data?.refreshToken);
       // document.cookie = `refreshToken=${response?.data?.refreshToken}; path=/; secure; samesite=strict`;
-      router.push('/');
+      router.push("/");
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
     }
   };
 
@@ -80,11 +80,9 @@ export const useLogin = () => {
   ) => {
     if (credentialResponse.credential) {
       try {
-        console.log('Calling backend...');
         await googleLogin(credentialResponse.credential);
-        console.log('Backend call successful');
       } catch (error) {
-        console.error('Google login error:', error);
+        console.error("Google login error:", error);
       }
     } else {
       onGoogleLoginError();
@@ -93,8 +91,8 @@ export const useLogin = () => {
 
   const onGoogleLoginError = () => {
     notification.error({
-      message: 'Google Login Failed',
-      description: 'Could not get credential from Google.',
+      message: "Google Login Failed",
+      description: "Could not get credential from Google.",
     });
   };
 
