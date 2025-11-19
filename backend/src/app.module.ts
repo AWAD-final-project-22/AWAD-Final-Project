@@ -52,6 +52,21 @@ import { MockEmailRepository } from './infrastructure/repositories/mock-email.re
         new GoogleSignInUseCase(userRepo, tokenSvc, pwdSvc),
       inject: ['UserRepository', 'TokenService', 'PasswordService'],
     },
+    {
+      provide: GetMailboxesUseCase,
+      useFactory: (emailRepo) => new GetMailboxesUseCase(emailRepo),
+      inject: ['EmailRepository'],
+    },
+    {
+      provide: GetEmailsUseCase,
+      useFactory: (emailRepo) => new GetEmailsUseCase(emailRepo),
+      inject: ['EmailRepository'],
+    },
+    {
+      provide: GetEmailDetailUseCase,
+      useFactory: (emailRepo) => new GetEmailDetailUseCase(emailRepo),
+      inject: ['EmailRepository'],
+    },
     { provide: 'UserRepository', useClass: UserRepositoryImpl },
     { provide: 'EmailRepository', useClass: MockEmailRepository },
     { provide: 'PasswordService', useClass: PasswordService },
