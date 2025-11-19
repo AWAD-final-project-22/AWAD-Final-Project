@@ -80,9 +80,10 @@ npm run start
 
 ## 🌿 Environment Variables
 
-| Variable                    | Description                 | Example                 |
-| :-------------------------- | :-------------------------- | :---------------------- |
-| `NEXT_PUBLIC_API_END_POINT` | Base URL of the backend API | `http://localhost:3000` |
+| Variable                       | Description                 | Example                 |
+| :----------------------------- | :-------------------------- | :---------------------- |
+| `NEXT_PUBLIC_API_END_POINT`    | Base URL of the backend API | `http://localhost:3000` |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth Client ID      | `your-google-client-id` |
 
 ---
 

@@ -1,7 +1,7 @@
 import { API_PATH } from '@/constants/apis.constant';
 import axiosClient from '@/services/api/apiClient';
 import { AxiosResponse } from 'axios';
-import { IEmail, IMailbox } from '../interfaces/mail.interface';
+import { IEmail, IMailbox } from '../interfaces/mailAPI.interface';
 
 // Get list mail boxes
 export function getListMailBoxes(): Promise<AxiosResponse<IMailbox[]>> {
