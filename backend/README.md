@@ -1,98 +1,146 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Backend - AWAD Final Project
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 📋 Table of Contents
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+1. [Project Overview](#project-overview)
+2. [Technology Stack](#technology-stack)
+3. [Setup and Run Instructions](#setup-and-run-instructions)
+4. [Environment Variables](#environment-variables)
+5. [Deployment](#deployment)
+6. [Token Storage & Security](#token-storage--security)
+7. [Third-Party Services](#third-party-services)
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🎯 Project Overview
 
-## Project setup
+This is the backend for the AWAD Final Project, built with **NestJS**. It provides RESTful APIs for authentication and business logic, following a clean architecture approach.
 
-```bash
-$ npm install
-```
+## 🛠 Technology Stack
 
-## Compile and run the project
+- **Framework**: NestJS
+- **Language**: TypeScript
+- **Database**: PostgreSQL (via Prisma ORM)
+- **Authentication**: Passport.js, JWT (Access & Refresh Tokens), Google OAuth
+- **Validation**: class-validator, class-transformer
 
-```bash
-# development
-$ npm run start
+---
 
-# watch mode
-$ npm run start:dev
+## 🚀 Setup and Run Instructions
 
-# production mode
-$ npm run start:prod
-```
+### Prerequisites
 
-## Run tests
+- Node.js (v18 or later)
+- npm or yarn
+- PostgreSQL database
+
+### 1. Clone the repository
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+git clone <repository-url>
+cd backend
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 2. Install dependencies
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm install
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 3. Configure Environment Variables
 
-## Resources
+Copy `.env.example` to `.env` and fill in the required values:
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+cp .env.example .env
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+See [Environment Variables](#environment-variables) for details.
 
-## Support
+### 4. Run Database Migrations (Prisma)
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+npx prisma migrate dev
+```
 
-## Stay in touch
+### 5. Run the Application
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+**Development Mode:**
 
-## License
+```bash
+npm run start:dev
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**Production Mode:**
+
+```bash
+npm run build
+npm run start:prod
+```
+
+---
+
+## 🌿 Environment Variables
+
+Create a `.env` file in the `backend` root directory.
+
+```env
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/dbname?schema=public"
+
+# JWT Secrets
+JWT_ACCESS_SECRET="your-access-secret"
+JWT_REFRESH_SECRET="your-refresh-secret"
+
+# Google OAuth
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# CORS
+FRONTEND_URL="http://localhost:3000,http://localhost:3001"
+```
+
+---
+
+## ☁️ Deployment
+
+### Public Hosting URL
+
+**[awad-final-project.vercel.app](https://awad-final-project.vercel.app)**
+
+### How to Reproduce Deployment Locally
+
+1.  Ensure PostgreSQL is running.
+2.  Set up `.env` with production credentials.
+3.  Build the project: `npm run build`.
+4.  Start the production server: `npm run start:prod`.
+5.  (Optional) Use Docker:
+    - Create a `Dockerfile`.
+    - Build image: `docker build -t backend-app .`.
+    - Run container: `docker run -p 3000:3000 --env-file .env backend-app`.
+
+---
+
+## 🔐 Token Storage & Security
+
+### Token Strategy
+
+- **Access Token**: Short-lived JWT used for authorizing API requests.
+- **Refresh Token**: Long-lived JWT used to obtain new access tokens.
+
+### Security Considerations
+
+- **Hashing**: Passwords are hashed using `bcrypt` before storage.
+- **Validation**: All inputs are validated using DTOs and `class-validator`.
+- **CORS**: Configured to allow requests only from trusted frontend origins (specified in `FRONTEND_URL`).
+- **OAuth**: Google OAuth tokens are verified using `google-auth-library`.
+
+---
+
+## 🔌 Third-Party Services
+
+1.  **Google OAuth**: Used for "Sign in with Google".
+    - Library: `google-auth-library`
+    - Requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+2.  **PostgreSQL**: Relational database for storing user data.
+    - ORM: `Prisma`
