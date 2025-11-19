@@ -29,13 +29,29 @@ import { MockEmailRepository } from './infrastructure/repositories/mock-email.re
     JwtAuthGuard,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     PrismaService,
-    { provide: LoginUseCase, useFactory: (userRepo, pwdSvc, tokenSvc) => new LoginUseCase(userRepo, pwdSvc, tokenSvc), inject: ['UserRepository', 'PasswordService', 'TokenService'] },
-    { provide: RegisterUseCase, useFactory: (userRepo, pwdSvc) => new RegisterUseCase(userRepo, pwdSvc), inject: ['UserRepository', 'PasswordService'] },
-    { provide: RefreshTokenUseCase, useFactory: (userRepo, tokenSvc, pwdSvc) => new RefreshTokenUseCase(userRepo, tokenSvc, pwdSvc), inject: ['UserRepository', 'TokenService', 'PasswordService'] },
-    { provide: GoogleSignInUseCase, useFactory: (userRepo, tokenSvc, pwdSvc) => new GoogleSignInUseCase(userRepo, tokenSvc, pwdSvc, process.env.GOOGLE_CLIENT_ID ?? ''), inject: ['UserRepository', 'TokenService', 'PasswordService'] },
-    { provide: GetMailboxesUseCase, useFactory: (repo) => new GetMailboxesUseCase(repo), inject: ['EmailRepository'] },
-    { provide: GetEmailsUseCase, useFactory: (repo) => new GetEmailsUseCase(repo), inject: ['EmailRepository'] },
-    { provide: GetEmailDetailUseCase, useFactory: (repo) => new GetEmailDetailUseCase(repo), inject: ['EmailRepository'] },
+    {
+      provide: LoginUseCase,
+      useFactory: (userRepo, pwdSvc, tokenSvc) =>
+        new LoginUseCase(userRepo, pwdSvc, tokenSvc),
+      inject: ['UserRepository', 'PasswordService', 'TokenService'],
+    },
+    {
+      provide: RegisterUseCase,
+      useFactory: (userRepo, pwdSvc) => new RegisterUseCase(userRepo, pwdSvc),
+      inject: ['UserRepository', 'PasswordService'],
+    },
+    {
+      provide: RefreshTokenUseCase,
+      useFactory: (userRepo, tokenSvc, pwdSvc) =>
+        new RefreshTokenUseCase(userRepo, tokenSvc, pwdSvc),
+      inject: ['UserRepository', 'TokenService', 'PasswordService'],
+    },
+    {
+      provide: GoogleSignInUseCase,
+      useFactory: (userRepo, tokenSvc, pwdSvc) =>
+        new GoogleSignInUseCase(userRepo, tokenSvc, pwdSvc),
+      inject: ['UserRepository', 'TokenService', 'PasswordService'],
+    },
     { provide: 'UserRepository', useClass: UserRepositoryImpl },
     { provide: 'EmailRepository', useClass: MockEmailRepository },
     { provide: 'PasswordService', useClass: PasswordService },
