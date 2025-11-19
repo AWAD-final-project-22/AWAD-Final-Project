@@ -8,6 +8,10 @@ export const API_PATH = {
       API_PATH: '/auth/login',
       API_KEY: 'login',
     },
+    GOOGLE_LOGIN: {
+      API_PATH: '/auth/google',
+      API_KEY: 'googleLogin',
+    },
     LOGOUT: {
       API_PATH: '/auth/logout',
       API_KEY: 'logout',
