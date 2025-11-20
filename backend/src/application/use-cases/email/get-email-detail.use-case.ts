@@ -1,4 +1,4 @@
-import type { IEmailRepository } from '../../../domain/repositories/email.repository';
+import { IEmailRepository } from '../../../domain/repositories/email.repository';
 import { Email } from '../../../domain/entities/email.entity';
 
 export class GetEmailDetailUseCase {

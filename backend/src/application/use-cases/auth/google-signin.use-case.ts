@@ -1,18 +1,17 @@
 import { OAuth2Client } from 'google-auth-library';
 import { randomUUID } from 'crypto';
 
-import type { UserRepository } from '../../../domain/repositories/user.repository';
+import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { User } from '../../../domain/entities/user.entity';
-import type { ITokenService } from '../../ports/token.port';
-import type { IPasswordService } from '../../ports/password.port';
+import { ITokenService } from '../../ports/token.port';
+import { IPasswordService } from '../../ports/password.port';
 import { InvalidCredentialsError } from '../../errors/invalid-credentials.error';
 import { EmailAlreadyExistsError } from '../../errors/email-already-exists.error';
-
 
 export class GoogleSignInUseCase {
   private oauthClient: OAuth2Client;
   constructor(
-    private readonly userRepository: UserRepository,
+    private readonly userRepository: IUserRepository,
     private readonly tokenService: ITokenService,
     private readonly passwordService: IPasswordService,
     //googleClientId: string,

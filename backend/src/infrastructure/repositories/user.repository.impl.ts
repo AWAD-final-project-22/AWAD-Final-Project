@@ -1,57 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import type { UserRepository } from '../../domain/repositories/user.repository';
+import { IUserRepository } from '../../domain/repositories/user.repository';
 import { User } from '../../domain/entities/user.entity';
 import { PrismaService } from '../database/prisma.service';
+import { UserMapper } from '../mappers/user.mapper';
 
 @Injectable()
-export class UserRepositoryImpl implements UserRepository {
+export class UserRepositoryImpl implements IUserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByEmail(email: string): Promise<User | null> {
     const u = await this.prisma.user.findUnique({ where: { email } });
     if (!u) return null;
-    const user = new User();
-    user.id = u.id;
-    user.email = u.email;
-    user.password = u.password ?? undefined;
-    user.name = u.name ?? undefined;
-    user.provider = u.provider as 'local' | 'google';
-    user.refreshToken = u.refreshToken ?? undefined;
-    return user;
+    return UserMapper.toDomain(u);
   }
 
   async findById(id: string): Promise<User | null> {
     const u = await this.prisma.user.findUnique({ where: { id } });
     if (!u) return null;
-    const user = new User();
-    user.id = u.id;
-    user.email = u.email;
-    user.password = u.password ?? undefined;
-    user.name = u.name ?? undefined;
-    user.provider = u.provider as 'local' | 'google';
-    user.refreshToken = u.refreshToken ?? undefined;
-    return user;
+    return UserMapper.toDomain(u);
   }
 
   async create(user: User): Promise<User> {
+    const data = UserMapper.toPersistence(user);
+
     const u = await this.prisma.user.create({
       data: {
-        id: user.id,
-        email: user.email,
-        password: user.password,
-        name: user.name,
-        provider: user.provider,
-        refreshToken: user.refreshToken,
+        id: data.id,
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        provider: data.provider,
+        refreshToken: data.refreshToken,
       },
     });
-    const created = new User();
-    created.id = u.id;
-    created.email = u.email;
-    created.password = u.password ?? undefined;
-    created.name = u.name ?? undefined;
-    created.provider = u.provider as 'local' | 'google';
-    created.refreshToken = u.refreshToken ?? undefined;
-    return created;
+
+    return UserMapper.toDomain(u);
   }
 
   async updateRefreshToken(id: string, refreshToken: string): Promise<void> {

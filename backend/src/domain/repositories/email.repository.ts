@@ -1,8 +1,8 @@
 import { Email } from '../entities/email.entity';
 import { Mailbox } from '../entities/mailbox.entity';
 
-export interface IEmailRepository {
-  getMailboxes(): Promise<Mailbox[]>;
-  getEmailsByMailbox(mailboxId: string): Promise<Email[]>;
-  getEmailDetail(emailId: string): Promise<Email>;
+export abstract class IEmailRepository {
+  abstract getMailboxes(): Promise<Mailbox[]>;
+  abstract getEmailsByMailbox(mailboxId: string): Promise<Email[]>;
+  abstract getEmailDetail(emailId: string): Promise<Email>;
 }
