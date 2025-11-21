@@ -64,15 +64,16 @@ See [Environment Variables](#environment-variables) for details.
 **Development Mode:**
 
 ```bash
-npm run dev
+npx next dev -p 3001
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Open [http://localhost:3001](http://localhost:3001) to view it in the browser.
 
 **Production Mode:**
 
 ```bash
 npm run build
+set PORT=3001
 npm run start
 ```
 
@@ -91,7 +92,7 @@ npm run start
 
 ### Public Hosting URL
 
-**[Insert Public URL Here]**
+**https://awad-final.vercel.app/**
 
 ### How to Reproduce Deployment Locally
 
