@@ -7,6 +7,9 @@ import {
   useMutationModifyEmailById,
   useMutationReplyEmailById,
 } from './mailAPIs';
+import { useControlParams } from '@/hooks/useControlParams';
+import { PARAMS_URL } from '@/constants/params.constant';
+import { LIMIT_DEFAULT, PAGE_DEFAULT } from '@/constants/common.constant';
 
 interface InBoxProps {
   mailBoxID: string;
@@ -14,12 +17,18 @@ interface InBoxProps {
 }
 
 export const useInbox = ({ mailBoxID, mailID }: InBoxProps) => {
+  const { searchParams } = useControlParams();
   const { notification } = App.useApp();
+
+  const pPage = searchParams.get(PARAMS_URL.PAGE) || PAGE_DEFAULT;
+  const pLimit = searchParams.get(PARAMS_URL.LIMIT) || LIMIT_DEFAULT;
 
   const { data: mailboxes, isLoading: isMailboxesLoading } = useGetMailBoxes();
 
-  const { data: emails, isLoading: isEmailsLoading } =
-    useGetEmailsByMailBoxId(mailBoxID);
+  const { data: emails, isLoading: isEmailsLoading } = useGetEmailsByMailBoxId(
+    { page: Number(pPage), limit: Number(pLimit) },
+    mailBoxID,
+  );
 
   const { data: emailDetail, isLoading: isEmailDetailLoading } =
     useGetEmailDetailById(mailID);

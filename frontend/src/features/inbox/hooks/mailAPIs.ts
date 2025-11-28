@@ -9,6 +9,7 @@ import {
   streamAttachmentById,
 } from '../services/mailQueries';
 import { UseMutationLoginOptions } from '@/interfaces/query';
+import { IEmailParams } from '../interfaces/mailAPI.interface';
 
 // Hook to get list of mail boxes
 export const useGetMailBoxes = () => {
@@ -20,10 +21,10 @@ export const useGetMailBoxes = () => {
 };
 
 // Hook to get list of emails by mail box id
-export const useGetEmailsByMailBoxId = (id: string) => {
+export const useGetEmailsByMailBoxId = (params: IEmailParams, id: string) => {
   return useQuery({
     queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, id],
-    queryFn: () => getListEmailsByMailBoxId(id),
+    queryFn: () => getListEmailsByMailBoxId(params, id),
     select: (response) => response.data,
     enabled: !!id,
   });
