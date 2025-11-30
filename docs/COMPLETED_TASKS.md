@@ -64,7 +64,7 @@
 - [x] 2.1 [BE] Create Gmail Service
 - [x] 2.2 [BE] Create Email Parser Utility (Implemented basic mapping)
 - [x] 2.3 [BE] Create Gmail Repository (Using UseCase + GmailService instead)
-- [x] 2.4 [BE] Update Email Controller (send, reply, modify, attachments) - *Done GET methods*
+- [x] 2.4 [BE] Update Email Controller (send, reply, modify, attachments) - _Done GET methods_
 - [x] 2.5 [BE] Update Module Wiring
 
 ### Phase 3: Token Refresh Concurrency Guard
@@ -90,11 +90,11 @@
 
 ## Summary
 
-| Category         | Done        | Remaining   |
-| ---------------- | ----------- | ----------- |
-| Backend Auth     | 6/6         | 0           |
-| Backend Email    | 3/3 (Mock)  | 0 (Base)    |
-| Frontend Auth    | 6/6         | 0           |
-| Frontend UI      | 7/7 (Basic) | 5           |
-| Token Management | 1/1 (Basic) | 0           |
-| Stretch          | 0/3         | 3           |
+| Category         | Done        | Remaining |
+| ---------------- | ----------- | --------- |
+| Backend Auth     | 6/6         | 0         |
+| Backend Email    | 3/3 (Mock)  | 0 (Base)  |
+| Frontend Auth    | 6/6         | 0         |
+| Frontend UI      | 7/7 (Basic) | 5         |
+| Token Management | 1/1 (Basic) | 0         |
+| Stretch          | 0/3         | 3         |
