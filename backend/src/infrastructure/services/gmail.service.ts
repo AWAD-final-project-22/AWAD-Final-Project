@@ -27,7 +27,6 @@ export class GmailServiceImpl implements IGmailService {
   ): Promise<GmailMessage[]> {
     const gmail = this.getClient(accessToken);
 
-    // 1. Lấy danh sách ID messages
     const res = await gmail.users.messages.list({
       userId,
       q: query,
@@ -37,8 +36,6 @@ export class GmailServiceImpl implements IGmailService {
     const messages = res.data.messages || [];
     if (messages.length === 0) return [];
 
-    // 2. Lấy chi tiết từng message (Google API bắt gọi từng cái)
-    // Dùng Promise.all để gọi song song cho nhanh
     const details = await Promise.all(
       messages.map((msg) => this.getMessage(accessToken, userId, msg.id!)),
     );
@@ -55,10 +52,9 @@ export class GmailServiceImpl implements IGmailService {
     const res = await gmail.users.messages.get({
       userId,
       id: messageId,
-      format: 'full', // Lấy đầy đủ nội dung
+      format: 'full',
     });
 
-    // Map dữ liệu từ Google format sang format của ta
     return res.data as unknown as GmailMessage;
   }
 }

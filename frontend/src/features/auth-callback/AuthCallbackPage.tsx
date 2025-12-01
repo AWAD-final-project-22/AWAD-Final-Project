@@ -1,21 +1,14 @@
 import React from "react";
 import { useAuthCallback } from "./hooks/useAuthCallback";
 import { Spin } from "antd";
+import { CallbackContainer } from "./styles/AuthCallbackPage.style";
 
 export const AuthCallbackPage: React.FC = () => {
-  useAuthCallback(); // Kích hoạt logic
+  useAuthCallback();
 
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        flexDirection: "column",
-      }}
-    >
+    <CallbackContainer>
       <Spin size="large" tip="Processing login..." />
-    </div>
+    </CallbackContainer>
   );
 };

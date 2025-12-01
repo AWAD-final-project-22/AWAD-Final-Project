@@ -32,7 +32,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
-@ApiTags('Auth') // Group endpoints under "Auth" tag in Swagger
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -95,7 +95,7 @@ export class AuthController {
   @Get('google/url')
   @ApiOperation({ summary: 'Get Google OAuth consent URL' })
   @ApiResponse({ status: 200, description: 'Google OAuth consent URL' })
-  getGoogleAuthtUrl() {
+  getGoogleAuthUrl() {
     const url = this.googleOAuthUseCase.getConsentUrl();
     return { url };
   }
@@ -114,17 +114,15 @@ export class AuthController {
   ) {
     const result = await this.googleOAuthUseCase.exchangeCode(code);
 
-    // Dùng Helper
     CookieHelper.setRefreshToken(res, result.refreshToken);
 
     return { accessToken: result.accessToken, user: result.user };
   }
 
-  @Public()
   @Post('logout')
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  @UseGuards(JwtAuthGuard) // Only logged in users can logout
+  @UseGuards(JwtAuthGuard)
   async logout(@Res({ passthrough: true }) res: Response) {
     CookieHelper.clearRefreshToken(res);
     return { message: 'Logged out successfully' };

@@ -15,14 +15,6 @@ export class GetMailboxesUseCase {
       throw new Error('User not found or not linked with Google');
     }
 
-    const accessToken = this.encryptionService.decrypt(user.googleAccessToken);
-
-    // Google Gmail API gọi Labels là Mailboxes
-    // Vì IGmailService ta chưa define getLabels, ta tạm dùng getProfile hoặc listMessages
-    // Thực tế ta cần thêm getLabels vào IGmailService.
-    // Nhưng để đơn giản, ta giả lập mailboxes static hoặc gọi API nếu bạn muốn update Port.
-
-    // Tạm thời trả về danh sách tĩnh chuẩn Gmail
     return [
       { id: 'INBOX', name: 'Inbox' },
       { id: 'SENT', name: 'Sent' },
