@@ -4,24 +4,28 @@ import { ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './presentation/filters/global-exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser'; // Bỏ * as
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ limit: '50mb', extended: true }));
 
   // Swagger Setup
   const config = new DocumentBuilder()
     .setTitle('AWAD Final Project API')
     .setDescription(
       'RESTful API for Gmail client application with authentication and email management.\n\n' +
-      '**Features:**\n' +
-      '- User authentication (JWT + Google OAuth 2.0)\n' +
-      '- Gmail integration (read, send, reply, modify emails)\n' +
-      '- Mailbox/Label management\n' +
-      '- Email search and pagination\n\n' +
-      '**Authentication:**\n' +
-      '1. Login with email/password or Google OAuth\n' +
-      '2. Use the returned `accessToken` in Authorization header\n' +
-      '3. Format: `Bearer <accessToken>`\n'
+        '**Features:**\n' +
+        '- User authentication (JWT + Google OAuth 2.0)\n' +
+        '- Gmail integration (read, send, reply, modify emails)\n' +
+        '- Mailbox/Label management\n' +
+        '- Email search and pagination\n\n' +
+        '**Authentication:**\n' +
+        '1. Login with email/password or Google OAuth\n' +
+        '2. Use the returned `accessToken` in Authorization header\n' +
+        '3. Format: `Bearer <accessToken>`\n',
     )
     .setVersion('1.0')
     .addBearerAuth(
@@ -41,8 +45,14 @@ async function bootstrap() {
       name: 'refreshToken',
     })
     .addTag('Auth', 'Authentication and authorization endpoints')
-    .addTag('Mail', 'Gmail integration - mailboxes, emails, send, reply, modify')
-    .addServer(process.env.BACKEND_URL || 'http://localhost:3000', 'Development server')
+    .addTag(
+      'Mail',
+      'Gmail integration - mailboxes, emails, send, reply, modify',
+    )
+    .addServer(
+      process.env.BACKEND_URL || 'http://localhost:3000',
+      'Development server',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -1,12 +1,15 @@
 import { API_PATH } from '@/constants/apis.constant';
+import { serializedParamsQuery } from '@/helpers/param.helper';
 import axiosClient from '@/services/apis/apiClient';
 import { AxiosResponse } from 'axios';
 import {
-  IEmail,
+  IEmailDetail,
   IEmailParams,
+  IEmailResponse,
   IMailbox,
+  IReplyEmailParams,
+  ISendMessageParams,
 } from '../interfaces/mailAPI.interface';
-import { serializedParamsQuery } from '@/helpers/param.helper';
 
 // Get list mail boxes
 export function getListMailBoxes(): Promise<AxiosResponse<IMailbox[]>> {
@@ -19,8 +22,8 @@ export function getListMailBoxes(): Promise<AxiosResponse<IMailbox[]>> {
 export function getListEmailsByMailBoxId(
   params: IEmailParams,
   id: string,
-): Promise<AxiosResponse<IEmail[]>> {
-  return axiosClient.get<IEmail[]>(
+): Promise<AxiosResponse<IEmailResponse>> {
+  return axiosClient.get<IEmailResponse>(
     API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_PATH(id),
     {
       params: serializedParamsQuery(params),
@@ -29,18 +32,30 @@ export function getListEmailsByMailBoxId(
 }
 
 // Get email detail by email id
-export function getEmailDetailById(id: string): Promise<AxiosResponse<IEmail>> {
-  return axiosClient.get<IEmail>(API_PATH.EMAIL.GET_DETAIL_MAIL.API_PATH(id));
+export function getEmailDetailById(
+  id: string,
+): Promise<AxiosResponse<IEmailDetail>> {
+  return axiosClient.get<IEmailDetail>(
+    API_PATH.EMAIL.GET_DETAIL_MAIL.API_PATH(id),
+  );
 }
 
 // Reply email by email id
-export function replyEmailById(id: string): Promise<AxiosResponse<void>> {
-  return axiosClient.post<void>(API_PATH.EMAIL.REPLY_EMAIL.API_PATH(id));
+export function replyEmailById(
+  id: string,
+  params: IReplyEmailParams,
+): Promise<AxiosResponse<void>> {
+  return axiosClient.post<void>(
+    API_PATH.EMAIL.REPLY_EMAIL.API_PATH(id),
+    params,
+  );
 }
 
 // Send email
-export function sendEmail(): Promise<AxiosResponse<void>> {
-  return axiosClient.post<void>(API_PATH.EMAIL.SEND_EMAIL.API_PATH);
+export function sendEmail(
+  params: ISendMessageParams,
+): Promise<AxiosResponse<void>> {
+  return axiosClient.post<void>(API_PATH.EMAIL.SEND_EMAIL.API_PATH, params);
 }
 
 // Modify email by email id

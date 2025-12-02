@@ -10,7 +10,7 @@ import {
   streamAttachmentById,
 } from '../services/mailQueries';
 import { UseMutationLoginOptions } from '@/interfaces/query';
-import { IEmailParams } from '../interfaces/mailAPI.interface';
+import { IEmailParams, IReplyEmailParams } from '../interfaces/mailAPI.interface';
 
 // Hook to get list of mail boxes
 export const useGetMailBoxes = () => {
@@ -48,7 +48,7 @@ export const useMutationSendEmail = ({
 }: UseMutationLoginOptions) => {
   return useMutation({
     mutationKey: [API_PATH.EMAIL.SEND_EMAIL.API_KEY],
-    mutationFn: () => sendEmail(),
+    mutationFn: sendEmail,
     onSuccess,
     onError,
   });
@@ -61,7 +61,7 @@ export const useMutationReplyEmailById = ({
 }: UseMutationLoginOptions) => {
   return useMutation({
     mutationKey: [API_PATH.EMAIL.REPLY_EMAIL.API_KEY],
-    mutationFn: (id: string) => replyEmailById(id),
+    mutationFn: ({ id, params }: { id: string; params: IReplyEmailParams }) => replyEmailById(id, params),
     onSuccess,
     onError,
   });

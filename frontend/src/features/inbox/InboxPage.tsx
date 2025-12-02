@@ -14,11 +14,13 @@ import { DivEmail, StyledLayout } from './styles/InboxPage.style';
 
 const InboxPage: React.FC = () => {
   const windowSize = useWindowSize();
-  const isMobile = windowSize.width <= parseInt(breakpoints.xLg);
+  const isMobile = windowSize.width <= parseInt(breakpoints.xl);
   const [openComposeModal, setOpenComposeModal] = useState(false);
   const {
     mailboxes,
     checkedEmails,
+    emailDetail,
+    isEmailDetailLoading,
     collapsed,
     setCollapsed,
     selectedMailbox,
@@ -33,6 +35,10 @@ const InboxPage: React.FC = () => {
     handleBackToList,
     filteredEmails,
     selectedEmailData,
+    handleSendEmail,
+    isSendEmailPending,
+    handleReplyEmail,
+    isReplyEmailPending,
   } = useInbox({ isMobile });
 
   return (
@@ -73,7 +79,10 @@ const InboxPage: React.FC = () => {
 
             <EmailDetailPanel
               show={!isMobile || showEmailDetail}
-              email={selectedEmailData}
+              email={emailDetail}
+              handleSendReply={handleReplyEmail}
+              isReplyEmailPending={isReplyEmailPending}
+              isEmailDetailLoading={isEmailDetailLoading}
             />
           </DivEmail>
         </Layout>
@@ -81,9 +90,8 @@ const InboxPage: React.FC = () => {
       <ComposeEmailModal
         open={openComposeModal}
         onClose={() => setOpenComposeModal(false)}
-        onSend={(payload) => {
-          console.log('Send email payload:', payload);
-        }}
+        onSend={handleSendEmail}
+        isSendEmailPending={isSendEmailPending}
       />
     </>
   );

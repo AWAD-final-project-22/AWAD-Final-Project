@@ -12,7 +12,16 @@ import {
   UnderlineOutlined,
 } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd';
-import { Button, Form, Input, Select, Tooltip, Upload, message } from 'antd';
+import {
+  App,
+  Button,
+  Form,
+  Input,
+  Select,
+  Tooltip,
+  Upload,
+  message,
+} from 'antd';
 import { useState } from 'react';
 import { FONT_FAMILY, FONT_SIZE } from '../constants/emails.constant';
 import {
@@ -43,13 +52,17 @@ interface ComposeEmailModalProps {
   open: boolean;
   onClose: () => void;
   onSend: (payload: ISendMessageParams) => void;
+  isSendEmailPending?: boolean;
 }
 
 export const ComposeEmailModal: React.FC<ComposeEmailModalProps> = ({
   open,
   onClose,
   onSend,
+  isSendEmailPending,
 }) => {
+  const { notification } = App.useApp();
+
   const [form] = Form.useForm();
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
@@ -61,25 +74,6 @@ export const ComposeEmailModal: React.FC<ComposeEmailModalProps> = ({
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
   const [isUnderline, setIsUnderline] = useState(false);
-
-  const handleFileChange: UploadProps['onChange'] = ({
-    fileList: newFileList,
-  }) => {
-    setFileList(newFileList);
-  };
-
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const result = reader.result as string;
-        const base64 = result.split(',')[1];
-        resolve(base64);
-      };
-      reader.onerror = (error) => reject(error);
-    });
-  };
 
   const applyFormat = (command: string, value?: string) => {
     document.execCommand(command, false, value);
@@ -134,12 +128,29 @@ export const ComposeEmailModal: React.FC<ComposeEmailModalProps> = ({
     setFontSize(value);
   };
 
+  const handleFileChange: UploadProps['onChange'] = ({
+    fileList: newFileList,
+  }) => {
+    setFileList(newFileList);
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
   const handleSend = async () => {
     try {
       const values = await form.validateFields();
-      console.log('Form Values:', values);
 
-      // Validate all emails
       const allEmails = [
         ...(values.to || []),
         ...(values.cc || []),
@@ -148,7 +159,10 @@ export const ComposeEmailModal: React.FC<ComposeEmailModalProps> = ({
 
       for (const email of allEmails) {
         if (email && !isValidEmail(email)) {
-          message.error(`Invalid email address: ${email}`);
+          notification.error({
+            message: 'Invalid Email',
+            description: `The email address "${email}" is not valid.`,
+          });
           return;
         }
       }
@@ -405,7 +419,11 @@ export const ComposeEmailModal: React.FC<ComposeEmailModalProps> = ({
         </EditorArea>
 
         <FooterActions>
-          <SendButton icon={<SendOutlined />} onClick={handleSend}>
+          <SendButton
+            icon={<SendOutlined />}
+            onClick={handleSend}
+            loading={isSendEmailPending}
+          >
             Send
           </SendButton>
           <Form.Item name='attachments' style={{ margin: 0 }}>

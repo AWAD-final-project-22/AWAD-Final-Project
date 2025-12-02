@@ -15,6 +15,23 @@ export interface IEmail {
   hasAttachment?: boolean;
 }
 
+export interface IEmailDetail extends IEmail {
+  from: string;
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  body: string;
+  date: string;
+  snippet?: string;
+  attachments?: IEmailAttachment[];
+}
+
+export interface IEmailResponse {
+  emails: IEmail[];
+  page: number;
+  limit: number;
+  total: number;
+}
 export interface IEmailParams {
   page?: number;
   limit?: number;
@@ -38,7 +55,7 @@ export interface ISendMessageParams {
   attachments?: IEmailAttachment[]; // file attachments
 }
 
-export interface ReplyEmailParams {
+export interface IReplyEmailParams {
   to?: string[];
   cc?: string[];
   bcc?: string[];

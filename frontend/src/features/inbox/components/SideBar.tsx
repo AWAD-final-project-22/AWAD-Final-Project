@@ -39,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setSearchText,
   setOpenComposeModal,
 }) => {
+  console.log('MAILBOX_DEFAULT_NAMES', selectedMailbox);
   const items = mailboxes?.map((mailbox) => {
     let icon: React.ReactNode;
     switch (mailbox.name.toLowerCase()) {

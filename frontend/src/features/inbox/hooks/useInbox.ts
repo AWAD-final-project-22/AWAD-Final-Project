@@ -3,14 +3,20 @@ import { PARAMS_URL } from '@/constants/params.constant';
 import { useControlParams } from '@/hooks/useControlParams';
 import { App } from 'antd';
 import { useCallback, useMemo, useState } from 'react';
-import { IEmail } from '../interfaces/mailAPI.interface';
+import {
+  IEmail,
+  IReplyEmailParams,
+  ISendMessageParams,
+} from '../interfaces/mailAPI.interface';
 import {
   useGetEmailDetailById,
   useGetEmailsByMailBoxId,
   useGetMailBoxes,
   useMutationModifyEmailById,
   useMutationReplyEmailById,
+  useMutationSendEmail,
 } from './mailAPIs';
+import { MAILBOX_DEFAULT_NAMES } from '../constants/emails.constant';
 
 interface InBoxProps {
   mailBoxID?: string;
@@ -22,10 +28,11 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const { searchParams } = useControlParams();
   const { notification } = App.useApp();
 
-  // State management
   const [checkedEmails, setCheckedEmails] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState(false);
-  const [selectedMailbox, setSelectedMailbox] = useState(mailBoxID || 'inbox');
+  const [selectedMailbox, setSelectedMailbox] = useState(
+    mailBoxID || MAILBOX_DEFAULT_NAMES,
+  );
   const [selectedEmail, setSelectedEmail] = useState<string | null>(
     mailID || null,
   );
@@ -48,6 +55,19 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
   const { data: emailDetail, isLoading: isEmailDetailLoading } =
     useGetEmailDetailById(selectedEmail || '');
+
+  const { mutateAsync: sendEmail, isPending: isSendEmailPending } =
+    useMutationSendEmail({
+      onSuccess: () => {
+        notification.success({
+          message: 'Send Email Success',
+          description: 'Your email has been sent successfully.',
+        });
+      },
+      onError: (error) => {
+        console.error('Send Email Failed:', error);
+      },
+    });
 
   const { mutateAsync: replyEmail, isPending: isReplyEmailPending } =
     useMutationReplyEmailById({
@@ -96,8 +116,8 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const handleSelectAll = useCallback(
     (checked: boolean) => {
       if (checked && emails) {
-        const filteredEmailIds = emails
-          .filter(
+        const filteredEmailIds = emails?.emails
+          ?.filter(
             (email: IEmail) =>
               email.mailboxId === selectedMailbox &&
               (email.subject.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -131,7 +151,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
   const filteredEmails = useMemo(() => {
     if (!emails) return [];
-    return emails.filter(
+    return emails?.emails?.filter(
       (email: IEmail) =>
         email.mailboxId === selectedMailbox &&
         (email.subject.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -142,8 +162,24 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
   const selectedEmailData = useMemo(() => {
     if (!emails || !selectedEmail) return undefined;
-    return emails.find((email: IEmail) => email.id === selectedEmail);
+    return emails?.emails?.find((email: IEmail) => email.id === selectedEmail);
   }, [emails, selectedEmail]);
+
+  const handleSendEmail = async (payload: ISendMessageParams) => {
+    try {
+      await sendEmail(payload);
+    } catch (error) {
+      console.error('Send Email Failed:', error);
+    }
+  };
+
+  const handleReplyEmail = async (params: IReplyEmailParams) => {
+    try {
+      await replyEmail({ id: selectedMailbox, params });
+    } catch (error) {
+      console.error('Reply Email Failed:', error);
+    }
+  };
 
   return {
     mailboxes,
@@ -155,8 +191,12 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     // streamAttachment,
     // isStreamAttachmentLoading,
 
-    replyEmail,
+    handleSendEmail,
+    isSendEmailPending,
+
+    handleReplyEmail,
     isReplyEmailPending,
+
     modifyEmail,
     isModifyEmailPending,
 

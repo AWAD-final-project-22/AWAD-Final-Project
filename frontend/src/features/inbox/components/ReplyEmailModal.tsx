@@ -18,7 +18,7 @@ import { FONT_FAMILY, FONT_SIZE } from '../constants/emails.constant';
 import {
   IEmailAttachment,
   ISendMessageParams,
-  ReplyEmailParams,
+  IReplyEmailParams,
 } from '../interfaces/mailAPI.interface';
 import {
   ActionButton,
@@ -44,8 +44,9 @@ interface ReplyEmailModalProps {
   open: boolean;
   onClose: () => void;
   onSend: (payload: ISendMessageParams) => void;
-  replyParams?: ReplyEmailParams;
+  replyParams?: IReplyEmailParams;
   originalSubject?: string;
+  isReplyEmailPending: boolean;
 }
 
 export const ReplyEmailModal: React.FC<ReplyEmailModalProps> = ({
@@ -54,6 +55,7 @@ export const ReplyEmailModal: React.FC<ReplyEmailModalProps> = ({
   onSend,
   replyParams,
   originalSubject,
+  isReplyEmailPending = false,
 }) => {
   const [form] = Form.useForm();
   const [showCc, setShowCc] = useState(false);
@@ -77,12 +79,12 @@ export const ReplyEmailModal: React.FC<ReplyEmailModalProps> = ({
         body: replyParams.includeOriginal ? `\n\n---\n${replyParams.body}` : '',
       });
 
-      if (replyParams.cc && replyParams.cc.length > 0) {
-        setShowCc(true);
-      }
-      if (replyParams.bcc && replyParams.bcc.length > 0) {
-        setShowBcc(true);
-      }
+      // if (replyParams.cc && replyParams.cc.length > 0) {
+      //   setShowCc(true);
+      // }
+      // if (replyParams.bcc && replyParams.bcc.length > 0) {
+      //   setShowBcc(true);
+      // }
     }
   }, [open, replyParams, originalSubject, form]);
 
@@ -436,8 +438,12 @@ export const ReplyEmailModal: React.FC<ReplyEmailModalProps> = ({
         </EditorArea>
 
         <FooterActions>
-          <SendButton icon={<SendOutlined />} onClick={handleSend}>
-            Gửi
+          <SendButton
+            icon={<SendOutlined />}
+            onClick={handleSend}
+            loading={isReplyEmailPending}
+          >
+            Send
           </SendButton>
           <Form.Item name='attachments' style={{ margin: 0 }}>
             <Upload

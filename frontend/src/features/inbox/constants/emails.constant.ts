@@ -11,3 +11,5 @@ export const FONT_SIZE = [
   { label: '14', value: 14 },
   { label: '16', value: 16 },
 ];
+
+export const MAILBOX_DEFAULT_NAMES = 'INBOX';
