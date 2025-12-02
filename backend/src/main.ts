@@ -11,13 +11,50 @@ async function bootstrap() {
   // Swagger Setup
   const config = new DocumentBuilder()
     .setTitle('AWAD Final Project API')
-    .setDescription('API documentation for the AWAD Final Project backend')
+    .setDescription(
+      'RESTful API for Gmail client application with authentication and email management.\n\n' +
+      '**Features:**\n' +
+      '- User authentication (JWT + Google OAuth 2.0)\n' +
+      '- Gmail integration (read, send, reply, modify emails)\n' +
+      '- Mailbox/Label management\n' +
+      '- Email search and pagination\n\n' +
+      '**Authentication:**\n' +
+      '1. Login with email/password or Google OAuth\n' +
+      '2. Use the returned `accessToken` in Authorization header\n' +
+      '3. Format: `Bearer <accessToken>`\n'
+    )
     .setVersion('1.0')
-    .addBearerAuth() // Enable Bearer Token authentication in Swagger UI
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addCookieAuth('refreshToken', {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'refreshToken',
+    })
+    .addTag('Auth', 'Authentication and authorization endpoints')
+    .addTag('Mail', 'Gmail integration - mailboxes, emails, send, reply, modify')
+    .addServer(process.env.BACKEND_URL || 'http://localhost:3000', 'Development server')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document); // Swagger UI will be available at /api
+  SwaggerModule.setup('api', app, document, {
+    customSiteTitle: 'AWAD API Docs',
+    customCss: '.swagger-ui .topbar { display: none }',
+    swaggerOptions: {
+      persistAuthorization: true,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
+    },
+  }); // Swagger UI will be available at /api
 
   app.use(cookieParser(process.env.COOKIE_SECRET));
 

@@ -8,8 +8,18 @@ import {
   Get,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Cookies } from '../decorators/cookies.decorator';
 import { Public } from '../decorators/public.decorator';
+import {
+  ApiLogin,
+  ApiRegister,
+  ApiRefreshToken,
+  ApiGoogleSignIn,
+  ApiGoogleAuthUrl,
+  ApiGoogleCallback,
+  ApiLogout,
+} from '../decorators/swagger/auth.swagger.decorator';
 import { LoginUseCase } from '../../application/use-cases/auth/login.use-case';
 import { RefreshTokenUseCase } from '../../application/use-cases/auth/refresh-token.use-case';
 import { GoogleSignInUseCase } from '../../application/use-cases/auth/google-signin.use-case';
@@ -23,13 +33,6 @@ import { InvalidCredentialsError } from '../../application/errors/invalid-creden
 import { GoogleOAuthUseCase } from '../../application/use-cases/auth/google-oauth.use-case';
 import type { Response, Request } from 'express';
 import { CookieHelper } from '../utils/cookie.helper';
-
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
 @ApiTags('Auth')
@@ -45,35 +48,29 @@ export class AuthController {
 
   @Public()
   @Post('login')
-  @ApiOperation({ summary: 'Login with email and password' })
-  @ApiResponse({
-    status: 201,
-    description: 'Login successful',
-    schema: { example: { accessToken: '...', refreshToken: '...' } },
-  })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiLogin()
   async login(@Body() loginDto: LoginDto) {
-    return await this.loginUseCase.execute(loginDto.email, loginDto.password);
+    const result = await this.loginUseCase.execute(loginDto.email, loginDto.password);
+    
+    return result;
   }
 
   @Public()
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 409, description: 'Email already exists' })
+  @ApiRegister()
   async register(@Body() registerDto: RegisterDto) {
-    return await this.registerUseCase.execute(
+    const result = await this.registerUseCase.execute(
       registerDto.email,
       registerDto.password,
       registerDto.name,
     );
+    
+    return result;
   }
 
   @Public()
   @Post('refresh-token')
-  @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({ status: 201, description: 'Token refreshed' })
-  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
+  @ApiRefreshToken()
   async refreshToken(
     @Cookies('refreshToken') token: string,
     @Res({ passthrough: true }) res: Response,
@@ -85,43 +82,41 @@ export class AuthController {
 
   @Public()
   @Post('google')
-  @ApiOperation({ summary: 'Login with Google ID Token' })
-  @ApiResponse({ status: 201, description: 'Google login successful' })
+  @ApiGoogleSignIn()
   async googleSignIn(@Body() dto: GoogleTokenDto) {
     return await this.googleSignInUseCase.execute(dto.idToken);
   }
 
   @Public()
   @Get('google/url')
-  @ApiOperation({ summary: 'Get Google OAuth consent URL' })
-  @ApiResponse({ status: 200, description: 'Google OAuth consent URL' })
-  getGoogleAuthUrl() {
+  @ApiGoogleAuthUrl()
+  getGoogleAuthtUrl() {
     const url = this.googleOAuthUseCase.getConsentUrl();
     return { url };
   }
 
   @Public()
   @Post('google/callback')
-  @ApiOperation({ summary: 'Exchange Google auth code for tokens' })
-  @ApiResponse({
-    status: 200,
-    description: 'Google auth code exchanged successfully',
-  })
-  @ApiResponse({ status: 400, description: 'Invalid auth code' })
+  @ApiGoogleCallback()
   async googleCallback(
     @Body('code') code: string,
     @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.googleOAuthUseCase.exchangeCode(code);
 
+    // Using Helper
     CookieHelper.setRefreshToken(res, result.refreshToken);
+
+    console.log('=== Google OAuth Callback Success ===');
+    console.log('Access Token:', result.accessToken);
+    console.log('User:', result.user.email);
+    console.log('====================================');
 
     return { accessToken: result.accessToken, user: result.user };
   }
 
   @Post('logout')
-  @ApiOperation({ summary: 'Logout user' })
-  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @ApiLogout()
   @UseGuards(JwtAuthGuard)
   async logout(@Res({ passthrough: true }) res: Response) {
     CookieHelper.clearRefreshToken(res);
