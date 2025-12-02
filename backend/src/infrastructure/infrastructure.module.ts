@@ -12,7 +12,7 @@ import { ITokenService } from '../application/ports/token.port';
 import { EncryptionServiceImpl } from './services/encryption.service';
 import { IEncryptionService } from '../application/ports/encryption.port';
 import { GmailServiceImpl } from './services/gmail.service';
-import { IGmailService } from 'src/application/ports/gmail.port';
+import { IGmailService } from '../application/ports/gmail.port';
 
 @Module({
   imports: [

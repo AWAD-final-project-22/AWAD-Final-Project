@@ -18,16 +18,13 @@ export const useAuthCallback = () => {
 
       const exchangeCode = async () => {
         try {
-          // Gọi API Backend qua apiClient
           const response = await apiClient.post("/auth/google/callback", {
             code,
           });
           const { accessToken, user } = response.data;
 
-          // Dispatch Redux Action
           dispatch(setCredentials({ accessToken, user }));
 
-          // Redirect
           router.push("/inbox");
         } catch (error) {
           console.error("Google OAuth failed:", error);

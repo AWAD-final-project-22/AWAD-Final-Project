@@ -9,11 +9,10 @@ const axiosClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // Enable cookies
+  withCredentials: true,
   // timeout: 10000,
 });
 
-// Request interceptor
 axiosClient.interceptors.request.use((config) => {
   const state = store.getState();
   const accessToken = state.auth.accessToken;
@@ -24,18 +23,15 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response interceptor — unwrap data
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Check if error is 401 and we haven't retried yet
     if (error?.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        // Call refresh token endpoint (Backend reads refresh token from HttpOnly cookie)
         const refreshResponse = await axiosClient.post<{ accessToken: string }>(
           API_PATH.AUTHENTICATE.REFRESH_TOKEN.API_PATH
         );
@@ -53,7 +49,7 @@ axiosClient.interceptors.response.use(
 
         return axiosClient(originalRequest);
       } catch (err) {
-        console.error("Refresh Token Failed:", err); // Add log for debugging
+        console.error("Refresh Token Failed:", err);
         notification.error({
           message: "Session Expired",
           description: "Your session has expired. Please log in again.",

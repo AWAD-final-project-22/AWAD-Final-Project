@@ -21,8 +21,7 @@ export class EncryptionServiceImpl implements IEncryptionService {
       const bytes = CryptoJS.AES.decrypt(cipherText, this.key);
       return bytes.toString(CryptoJS.enc.Utf8);
     } catch (error) {
-      console.error('Error decrypting text', error);
-      return '';
+      throw new Error('Failed to decrypt data: ' + error.message);
     }
   }
 }

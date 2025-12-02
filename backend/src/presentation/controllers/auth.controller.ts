@@ -35,7 +35,7 @@ import type { Response, Request } from 'express';
 import { CookieHelper } from '../utils/cookie.helper';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
-@ApiTags('Auth') // Group endpoints under "Auth" tag in Swagger
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -115,7 +115,6 @@ export class AuthController {
     return { accessToken: result.accessToken, user: result.user };
   }
 
-  @Public()
   @Post('logout')
   @ApiLogout()
   @UseGuards(JwtAuthGuard)

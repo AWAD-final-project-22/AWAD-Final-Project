@@ -52,13 +52,13 @@ export class GetEmailsUseCase extends BaseGmailUseCase {
       threadId: msg.threadId,
       subject: getHeader('Subject') || '(No Subject)',
       sender: getHeader('From'),
-      from: getHeader('From'), // Frontend có thể dùng field này
+      from: getHeader('From'),
       to: getHeader('To'),
-      date: new Date(Number(msg.internalDate)).toISOString(), // Chuyển timestamp sang ISO string
+      date: new Date(Number(msg.internalDate)).toISOString(),
       snippet: msg.snippet,
-      preview: msg.snippet, // Frontend dùng field này
-      isRead: !msg.labelIds.includes('UNREAD'),
-      isStarred: msg.labelIds.includes('STARRED'),
+      preview: msg.snippet,
+      isRead: !(msg.labelIds?.includes('UNREAD') ?? false),
+      isStarred: msg.labelIds?.includes('STARRED') ?? false,
       mailboxId: mailboxId,
     };
   }
