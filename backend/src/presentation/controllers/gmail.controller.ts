@@ -97,18 +97,17 @@ export class GmailController {
   async getEmails(
     @Req() req: any, 
     @Param('mailboxId') mailboxId: string,
-    @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('pageToken') pageToken?: string,
   ) {
     const mbId = mailboxId || 'inbox';
-    const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20;
 
     return await this.getEmailsUseCase.execute(
       req.user.sub,
       mbId,
-      pageNum,
       limitNum,
+      pageToken,
     );
   }
 

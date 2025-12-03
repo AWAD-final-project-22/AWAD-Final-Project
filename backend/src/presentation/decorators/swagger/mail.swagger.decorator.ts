@@ -65,7 +65,7 @@ export const ApiGetEmails = () =>
   applyDecorators(
     ApiOperation({
       summary: 'Get emails from a mailbox',
-      description: 'Retrieve paginated list of emails from a specific mailbox/label',
+      description: 'Retrieve paginated list of emails from a specific mailbox/label using Gmail API pageToken',
     }),
     ApiParam({
       name: 'mailboxId',
@@ -73,16 +73,16 @@ export const ApiGetEmails = () =>
       example: 'INBOX',
     }),
     ApiQuery({
-      name: 'page',
-      required: false,
-      description: 'Page number',
-      example: 1,
-    }),
-    ApiQuery({
       name: 'limit',
       required: false,
       description: 'Number of emails per page',
       example: 20,
+    }),
+    ApiQuery({
+      name: 'pageToken',
+      required: false,
+      description: 'Page token from previous response for next page',
+      example: 'CAMSDCIQGiYKABIAGAEgACgA',
     }),
     ApiResponse({
       status: 200,
@@ -100,7 +100,7 @@ export const ApiGetEmails = () =>
               isStarred: false,
             },
           ],
-          page: 1,
+          nextPageToken: 'CAMSDCIQGiYKABIAGAEgACgA',
           limit: 20,
           total: 150,
         },
