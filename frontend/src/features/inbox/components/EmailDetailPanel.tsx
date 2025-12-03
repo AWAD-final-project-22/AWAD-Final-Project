@@ -1,5 +1,6 @@
-"use client";
+'use client';
 
+import { LoadingSpin } from '@/components/LoadingSpin';
 import {
   DeleteOutlined,
   DownloadOutlined,
@@ -7,15 +8,15 @@ import {
   PaperClipOutlined,
   SendOutlined,
   StarOutlined,
-} from "@ant-design/icons";
-import { Button, Card, Divider, Spin, Tooltip, Typography } from "antd";
-import { useState } from "react";
-import { getFileIcon } from "../helpers/fileIcon.helper";
+} from '@ant-design/icons';
+import { Button, Card, Divider, Tooltip, Typography } from 'antd';
+import { useState } from 'react';
+import { getFileIcon } from '../helpers/fileIcon.helper';
 import {
   IEmailDetail,
   IReplyEmailParams,
   ISendMessageParams,
-} from "../interfaces/mailAPI.interface";
+} from '../interfaces/mailAPI.interface';
 import {
   AttachmentCard,
   AttachmentContainer,
@@ -26,9 +27,9 @@ import {
   FileMeta,
   FileName,
   FileSize,
-} from "../styles/InboxPage.style";
-import { EmptyState } from "./EmptyState";
-import { ReplyEmailModal } from "./ReplyEmailModal";
+} from '../styles/InboxPage.style';
+import { EmptyState } from '@/components/EmptyState';
+import { ReplyEmailModal } from './ReplyEmailModal';
 
 const { Title, Text } = Typography;
 
@@ -41,7 +42,7 @@ interface EmailDetailProps {
   onDownloadAttachment: (
     messageId: string,
     attachmentId: string,
-    filename: string
+    filename: string,
   ) => void;
 }
 
@@ -61,12 +62,12 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
   const handleReplyClick = () => {
     if (!email) return;
 
-    const fromAddress = email.from || email.sender || "";
+    const fromAddress = email.from || email.sender || '';
     const senderEmail = fromAddress.match(/<([^>]+)>/)?.[1] || fromAddress;
 
     const params: IReplyEmailParams = {
       to: [senderEmail],
-      body: email.preview || "",
+      body: email.preview || '',
       includeOriginal: true,
     };
 
@@ -77,16 +78,16 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
   const handleDownloadClick = (
     e: React.MouseEvent,
     attachmentId: string,
-    filename: string
+    filename: string,
   ) => {
-    e.stopPropagation(); // Ngăn chặn sự kiện click lan ra ngoài (ví dụ click vào card để xem preview)
+    e.stopPropagation();
     if (email && attachmentId) {
       onDownloadAttachment(email.id, attachmentId, filename);
     }
   };
 
   const renderLoading = () => {
-    return <Spin></Spin>;
+    return <LoadingSpin />;
   };
   return (
     <EmailDetail $show={show}>
@@ -100,50 +101,50 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
                 </Title>
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
                     marginTop: 8,
                   }}
                 >
                   <div>
-                    <Text type="secondary">From: {email.from}</Text>
+                    <Text type='secondary'>From: {email.from}</Text>
                   </div>
-                  <div style={{ marginLeft: "8px" }}>
-                    <Text type="secondary" style={{ marginRight: 8 }}>
+                  <div style={{ marginLeft: '8px' }}>
+                    <Text type='secondary' style={{ marginRight: 8 }}>
                       {new Date(email.date).toLocaleString()}
                     </Text>
-                    <Tooltip title="Toggle star">
-                      <Button type="text" icon={<StarOutlined />} />
+                    <Tooltip title='Toggle star'>
+                      <Button type='text' icon={<StarOutlined />} />
                     </Tooltip>
-                    <Tooltip title="Forward">
-                      <Button type="text" icon={<ForwardOutlined />} />
+                    <Tooltip title='Forward'>
+                      <Button type='text' icon={<ForwardOutlined />} />
                     </Tooltip>
-                    <Tooltip title="Reply">
+                    <Tooltip title='Reply'>
                       <Button
-                        type="text"
+                        type='text'
                         icon={<SendOutlined />}
                         onClick={handleReplyClick}
                       />
                     </Tooltip>
-                    <Tooltip title="Delete">
-                      <Button type="text" icon={<DeleteOutlined />} />
+                    <Tooltip title='Delete'>
+                      <Button type='text' icon={<DeleteOutlined />} />
                     </Tooltip>
                   </div>
                 </div>
               </div>
             }
             style={{
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              overflowY: "auto",
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              overflowY: 'auto',
             }}
           >
             <div style={{ marginBottom: 16 }}>
               {email.snippet && (
                 <Typography.Paragraph
-                  type="secondary"
+                  type='secondary'
                   style={{ marginBottom: 8 }}
                 >
                   {email.snippet}
@@ -152,7 +153,7 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
               {email.body && (
                 <div
                   style={{
-                    background: "#fafafa",
+                    background: '#fafafa',
                     padding: 12,
                     borderRadius: 6,
                   }}
@@ -162,7 +163,7 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
             </div>
             {email.attachments && email.attachments.length > 0 && (
               <AttachmentContainer>
-                <Divider orientation="left" style={{ fontSize: "14px" }}>
+                <Divider orientation='left' style={{ fontSize: '14px' }}>
                   <PaperClipOutlined style={{ marginRight: 8 }} />
                   Attachments ({email.attachments.length})
                 </Divider>
@@ -184,13 +185,13 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
                         </FileMeta>
                       </FileInfo>
 
-                      <Tooltip title="Download">
+                      <Tooltip title='Download'>
                         <Button
-                          type="text"
+                          type='text'
                           icon={<DownloadOutlined />}
                           disabled={!att.id}
                           onClick={(e) =>
-                            handleDownloadClick(e, att.id || "", att.filename)
+                            handleDownloadClick(e, att.id || '', att.filename)
                           }
                         />
                       </Tooltip>
@@ -213,7 +214,7 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
       ) : isEmailDetailLoading ? (
         renderLoading()
       ) : (
-        <EmptyState />
+        <EmptyState message='Select an email to view its content' />
       )}
     </EmailDetail>
   );

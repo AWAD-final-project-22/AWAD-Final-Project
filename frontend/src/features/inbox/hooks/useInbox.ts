@@ -1,13 +1,13 @@
-import { LIMIT_DEFAULT, PAGE_DEFAULT } from "@/constants/common.constant";
-import { PARAMS_URL } from "@/constants/params.constant";
-import { useControlParams } from "@/hooks/useControlParams";
-import { App } from "antd";
-import { useCallback, useMemo, useState } from "react";
+import { LIMIT_DEFAULT, PAGE_DEFAULT } from '@/constants/common.constant';
+import { PARAMS_URL } from '@/constants/params.constant';
+import { useControlParams } from '@/hooks/useControlParams';
+import { App } from 'antd';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   IEmail,
   IReplyEmailParams,
   ISendMessageParams,
-} from "../interfaces/mailAPI.interface";
+} from '../interfaces/mailAPI.interface';
 import {
   useGetEmailDetailById,
   useGetEmailsByMailBoxId,
@@ -16,8 +16,8 @@ import {
   useMutationReplyEmailById,
   useMutationSendEmail,
   useMutationDownloadAttachment,
-} from "./mailAPIs";
-import { MAILBOX_DEFAULT_NAMES } from "../constants/emails.constant";
+} from './mailAPIs';
+import { MAILBOX_DEFAULT_NAMES } from '../constants/emails.constant';
 
 interface InBoxProps {
   mailBoxID?: string;
@@ -26,18 +26,18 @@ interface InBoxProps {
 }
 
 export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
-  const { searchParams } = useControlParams();
+  const { searchParams, updateSearchQuery } = useControlParams();
   const { notification } = App.useApp();
 
   const [checkedEmails, setCheckedEmails] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState(false);
   const [selectedMailbox, setSelectedMailbox] = useState(
-    mailBoxID || MAILBOX_DEFAULT_NAMES
+    mailBoxID || MAILBOX_DEFAULT_NAMES,
   );
   const [selectedEmail, setSelectedEmail] = useState<string | null>(
-    mailID || null
+    mailID || null,
   );
-  const [searchText, setSearchText] = useState("");
+  const [searchText, setSearchText] = useState('');
   const [showEmailList, setShowEmailList] = useState(true);
   const [showEmailDetail, setShowEmailDetail] = useState(false);
 
@@ -48,25 +48,22 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
   const { data: emails, isLoading: isEmailsLoading } = useGetEmailsByMailBoxId(
     { page: Number(pPage), limit: Number(pLimit) },
-    selectedMailbox
+    selectedMailbox,
   );
 
-  // const mailboxes = MOCK_MAILBOXES;
-  // const emails = MOCK_EMAILS;
-
   const { data: emailDetail, isLoading: isEmailDetailLoading } =
-    useGetEmailDetailById(selectedEmail || "");
+    useGetEmailDetailById(selectedEmail || '');
 
   const { mutateAsync: sendEmail, isPending: isSendEmailPending } =
     useMutationSendEmail({
       onSuccess: () => {
         notification.success({
-          message: "Send Email Success",
-          description: "Your email has been sent successfully.",
+          message: 'Send Email Success',
+          description: 'Your email has been sent successfully.',
         });
       },
       onError: (error) => {
-        console.error("Send Email Failed:", error);
+        console.error('Send Email Failed:', error);
       },
     });
 
@@ -74,12 +71,12 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     useMutationReplyEmailById({
       onSuccess: () => {
         notification.success({
-          message: "Reply Email Success",
-          description: "Your reply has been sent successfully.",
+          message: 'Reply Email Success',
+          description: 'Your reply has been sent successfully.',
         });
       },
       onError: (error) => {
-        console.error("Reply Email Failed:", error);
+        console.error('Reply Email Failed:', error);
       },
     });
 
@@ -87,22 +84,22 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     useMutationModifyEmailById({
       onSuccess: () => {
         notification.success({
-          message: "Modify Email Success",
-          description: "The email has been modified successfully.",
+          message: 'Modify Email Success',
+          description: 'The email has been modified successfully.',
         });
       },
       onError: (error) => {
-        console.error("Modify Email Failed:", error);
+        console.error('Modify Email Failed:', error);
       },
     });
 
   const { mutateAsync: downloadAttachmentMutate } =
     useMutationDownloadAttachment({
       onError: (error) => {
-        console.error("Download Attachment Failed:", error);
+        console.error('Download Attachment Failed:', error);
         notification.error({
-          message: "Download Failed",
-          description: "Could not download the attachment.",
+          message: 'Download Failed',
+          description: 'Could not download the attachment.',
         });
       },
     });
@@ -110,7 +107,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const handleDownloadAttachment = async (
     messageId: string,
     attachmentId: string,
-    filename: string
+    filename: string,
   ) => {
     try {
       const response = await downloadAttachmentMutate({
@@ -119,9 +116,9 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
       });
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = url;
-      link.setAttribute("download", filename);
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
 
@@ -142,7 +139,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
         return newCheckedEmails;
       });
     },
-    []
+    [],
   );
 
   const handleSelectAll = useCallback(
@@ -154,7 +151,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
               email.mailboxId === selectedMailbox &&
               (email.subject.toLowerCase().includes(searchText.toLowerCase()) ||
                 email.sender.toLowerCase().includes(searchText.toLowerCase()) ||
-                email.preview.toLowerCase().includes(searchText.toLowerCase()))
+                email.preview.toLowerCase().includes(searchText.toLowerCase())),
           )
           .map((email: IEmail) => email.id);
         setCheckedEmails(new Set(filteredEmailIds));
@@ -162,7 +159,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
         setCheckedEmails(new Set());
       }
     },
-    [emails, selectedMailbox, searchText]
+    [emails, selectedMailbox, searchText],
   );
 
   const handleEmailClick = useCallback(
@@ -173,7 +170,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
         setShowEmailDetail(true);
       }
     },
-    [isMobile]
+    [isMobile],
   );
 
   const handleBackToList = useCallback(() => {
@@ -188,7 +185,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
         email.mailboxId === selectedMailbox &&
         (email.subject.toLowerCase().includes(searchText.toLowerCase()) ||
           email.sender.toLowerCase().includes(searchText.toLowerCase()) ||
-          email.preview.toLowerCase().includes(searchText.toLowerCase()))
+          email.preview.toLowerCase().includes(searchText.toLowerCase())),
     );
   }, [emails, selectedMailbox, searchText]);
 
@@ -201,21 +198,34 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     try {
       await sendEmail(payload);
     } catch (error) {
-      console.error("Send Email Failed:", error);
+      console.error('Send Email Failed:', error);
     }
   };
 
   const handleReplyEmail = async (params: IReplyEmailParams) => {
     try {
       if (!selectedEmail) {
-        notification.error({ message: "No email selected to reply" });
+        notification.error({ message: 'No email selected to reply' });
         return;
       }
       await replyEmail({ id: selectedEmail, params });
     } catch (error) {
-      console.error("Reply Email Failed:", error);
+      console.error('Reply Email Failed:', error);
     }
   };
+
+  const handlePageChange = (value: number) => {
+    updateSearchQuery({ [PARAMS_URL.PAGE]: value }, true);
+  };
+
+  useEffect(() => {
+    if (!isMobile && collapsed) {
+      setCollapsed(false);
+    }
+    if (isMobile && !collapsed) {
+      setCollapsed(true);
+    }
+  }, [isMobile]);
 
   return {
     mailboxes,
@@ -256,5 +266,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
     filteredEmails,
     selectedEmailData,
+
+    handlePageChange,
   };
 };

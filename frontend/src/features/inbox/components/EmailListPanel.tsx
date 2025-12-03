@@ -20,6 +20,8 @@ import {
   StarOutlined as StarO,
 } from '@ant-design/icons';
 import { formatDate } from '@/helpers/day.helper';
+import { EmptyState } from '@/components/EmptyState';
+import { LoadingSpin } from '@/components/LoadingSpin';
 const { Text } = Typography;
 
 interface EmailListPanelProps {
@@ -27,10 +29,12 @@ interface EmailListPanelProps {
   checkedEmails: Set<string>;
   handleSelectAll: (checked: boolean) => void;
   filteredEmails: IEmail[];
+  isEmailsLoading: boolean;
   handleCheckboxChange: (id: string, checked: boolean) => void;
   handleEmailClick: (id: string) => void;
   isMobile?: boolean;
   selectedEmail: IEmail | undefined;
+  handlePageChange: (page: number) => void;
 }
 
 export const EmailListPanel: React.FC<EmailListPanelProps> = ({
@@ -42,7 +46,118 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
   handleEmailClick,
   isMobile = false,
   selectedEmail,
+  isEmailsLoading = false,
+  handlePageChange,
 }) => {
+  const renderEmailList = () => {
+    if (!filteredEmails || filteredEmails.length === 0) {
+      return <EmptyState message='No emails to display' />;
+    }
+    if (isEmailsLoading) {
+      return <LoadingSpin />;
+    }
+    return (
+      <>
+        <DivEmailList $isMobile={isMobile}>
+          {filteredEmails?.map((email) => (
+            <EmailItem
+              key={email.id}
+              $selected={selectedEmail?.id === email.id}
+              onClick={() => handleEmailClick(email.id)}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: '100%',
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    minWidth: 40,
+                  }}
+                >
+                  <Checkbox
+                    style={{ marginRight: 8 }}
+                    checked={checkedEmails.has(email.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      handleCheckboxChange(email.id, e.target.checked);
+                    }}
+                  />
+                  <Tooltip title={email.isStarred ? 'Unstar' : 'Star'}>
+                    <Button
+                      type='text'
+                      icon={
+                        email.isStarred ? (
+                          <StarFilled style={{ color: '#faad14' }} />
+                        ) : (
+                          <StarO />
+                        )
+                      }
+                      style={{ marginRight: 8 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Toggle star status
+                      }}
+                    />
+                  </Tooltip>
+                </div>
+                <EmailPreview>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <EmailSubject
+                      style={{
+                        fontWeight: email.isRead ? 'normal' : 'bold',
+                      }}
+                    >
+                      {email.sender.split('<')[0].trim()}
+                    </EmailSubject>
+                    <EmailTime>{formatDate(email.timestamp)}</EmailTime>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div>
+                      <Text strong={!email.isRead} style={{ marginRight: 8 }}>
+                        {email.subject}
+                      </Text>
+                      <Text type='secondary'>
+                        {email.preview.length > 50
+                          ? `${email.preview.substring(0, 50)}...`
+                          : email.preview}
+                      </Text>
+                    </div>
+                    {email.hasAttachment && (
+                      <PaperClipOutlined style={{ color: '#8c8c8c' }} />
+                    )}
+                  </div>
+                </EmailPreview>
+              </div>
+            </EmailItem>
+          ))}
+        </DivEmailList>
+        <Pagination
+          size='small'
+          total={filteredEmails?.length || 0}
+          pageSize={20}
+          showSizeChanger={false}
+          style={{ padding: '8px', textAlign: 'center' }}
+          onChange={(e) => handlePageChange(e)}
+        />
+      </>
+    );
+  };
+
   return (
     <EmailList $show={showEmailList}>
       <Toolbar>
@@ -71,102 +186,7 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
         </Tooltip>
         <div style={{ flex: 1 }} />
       </Toolbar>
-      <DivEmailList $isMobile={isMobile}>
-        {filteredEmails?.map((email) => (
-          <EmailItem
-            key={email.id}
-            $selected={selectedEmail?.id === email.id}
-            onClick={() => handleEmailClick(email.id)}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                width: '100%',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  minWidth: 40,
-                }}
-              >
-                <Checkbox
-                  style={{ marginRight: 8 }}
-                  checked={checkedEmails.has(email.id)}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    handleCheckboxChange(email.id, e.target.checked);
-                  }}
-                />
-                <Tooltip title={email.isStarred ? 'Unstar' : 'Star'}>
-                  <Button
-                    type='text'
-                    icon={
-                      email.isStarred ? (
-                        <StarFilled style={{ color: '#faad14' }} />
-                      ) : (
-                        <StarO />
-                      )
-                    }
-                    style={{ marginRight: 8 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Toggle star status
-                    }}
-                  />
-                </Tooltip>
-              </div>
-              <EmailPreview>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <EmailSubject
-                    style={{
-                      fontWeight: email.isRead ? 'normal' : 'bold',
-                    }}
-                  >
-                    {email.sender.split('<')[0].trim()}
-                  </EmailSubject>
-                  <EmailTime>{formatDate(email.timestamp)}</EmailTime>
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div>
-                    <Text strong={!email.isRead} style={{ marginRight: 8 }}>
-                      {email.subject}
-                    </Text>
-                    <Text type='secondary'>
-                      {email.preview.length > 50
-                        ? `${email.preview.substring(0, 50)}...`
-                        : email.preview}
-                    </Text>
-                  </div>
-                  {email.hasAttachment && (
-                    <PaperClipOutlined style={{ color: '#8c8c8c' }} />
-                  )}
-                </div>
-              </EmailPreview>
-            </div>
-          </EmailItem>
-        ))}
-      </DivEmailList>
-
-      <Pagination
-        size='small'
-        total={filteredEmails?.length || 0}
-        pageSize={20}
-        showSizeChanger={false}
-        style={{ padding: '8px', textAlign: 'center' }}
-      />
+      {renderEmailList()}
     </EmailList>
   );
 };
