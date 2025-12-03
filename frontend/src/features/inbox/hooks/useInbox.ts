@@ -42,14 +42,14 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const [showEmailDetail, setShowEmailDetail] = useState(false);
 
   const pPage = searchParams.get(PARAMS_URL.PAGE) || PAGE_DEFAULT;
-  const pLimit = searchParams.get(PARAMS_URL.LIMIT) || LIMIT_DEFAULT;
 
   const { data: mailboxes, isLoading: isMailboxesLoading } = useGetMailBoxes();
 
   const { data: emails, isLoading: isEmailsLoading } = useGetEmailsByMailBoxId(
-    { page: Number(pPage), limit: Number(pLimit) },
+    { page: Number(pPage), limit: Number(LIMIT_DEFAULT) },
     selectedMailbox,
   );
+  console.log('emails data', emails);
 
   const { data: emailDetail, isLoading: isEmailDetailLoading } =
     useGetEmailDetailById(selectedEmail || '');
