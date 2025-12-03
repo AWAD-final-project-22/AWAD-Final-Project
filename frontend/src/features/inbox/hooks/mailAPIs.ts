@@ -1,14 +1,19 @@
-import { API_PATH } from '@/constants/apis.constant';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { API_PATH } from "@/constants/apis.constant";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   getEmailDetailById,
   getListEmailsByMailBoxId,
   getListMailBoxes,
   modifyEmailById,
   replyEmailById,
+  sendEmail,
   streamAttachmentById,
-} from '../services/mailQueries';
-import { UseMutationLoginOptions } from '@/interfaces/query';
+} from "../services/mailQueries";
+import { UseMutationLoginOptions } from "@/interfaces/query";
+import {
+  IEmailParams,
+  IReplyEmailParams,
+} from "../interfaces/mailAPI.interface";
 
 // Hook to get list of mail boxes
 export const useGetMailBoxes = () => {
@@ -20,14 +25,10 @@ export const useGetMailBoxes = () => {
 };
 
 // Hook to get list of emails by mail box id
-export const useGetEmailsByMailBoxId = (
-  id: string,
-  page?: number,
-  limit?: number,
-) => {
+export const useGetEmailsByMailBoxId = (params: IEmailParams, id: string) => {
   return useQuery({
-    queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, id, page, limit],
-    queryFn: () => getListEmailsByMailBoxId(id, page, limit),
+    queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, id],
+    queryFn: () => getListEmailsByMailBoxId(params, id),
     select: (response) => response.data,
     enabled: !!id,
   });
@@ -43,6 +44,19 @@ export const useGetEmailDetailById = (id: string) => {
   });
 };
 
+// Send email
+export const useMutationSendEmail = ({
+  onSuccess,
+  onError,
+}: UseMutationLoginOptions) => {
+  return useMutation({
+    mutationKey: [API_PATH.EMAIL.SEND_EMAIL.API_KEY],
+    mutationFn: sendEmail,
+    onSuccess,
+    onError,
+  });
+};
+
 // Reply email by email id
 export const useMutationReplyEmailById = ({
   onSuccess,
@@ -50,7 +64,8 @@ export const useMutationReplyEmailById = ({
 }: UseMutationLoginOptions) => {
   return useMutation({
     mutationKey: [API_PATH.EMAIL.REPLY_EMAIL.API_KEY],
-    mutationFn: (id: string) => replyEmailById(id),
+    mutationFn: ({ id, params }: { id: string; params: IReplyEmailParams }) =>
+      replyEmailById(id, params),
     onSuccess,
     onError,
   });
@@ -70,11 +85,34 @@ export const useMutationModifyEmailById = ({
 };
 
 // Stream attachment
-export const useGetAttachmentById = (id: string) => {
+export const useGetAttachmentById = (
+  messageId: string,
+  attachmentId: string
+) => {
   return useQuery({
-    queryKey: [API_PATH.EMAIL.ATTACHMENT_DOWNLOAD.API_KEY, id],
-    queryFn: () => streamAttachmentById(id),
+    queryKey: [
+      API_PATH.EMAIL.ATTACHMENT_DOWNLOAD.API_KEY,
+      messageId,
+      attachmentId,
+    ],
+    queryFn: () => streamAttachmentById(messageId, attachmentId),
     select: (response) => response.data,
-    enabled: !!id,
+    enabled: !!messageId && !!attachmentId,
+  });
+};
+
+export const useMutationDownloadAttachment = ({
+  onError,
+}: UseMutationLoginOptions) => {
+  return useMutation({
+    mutationKey: [API_PATH.EMAIL.ATTACHMENT_DOWNLOAD.API_KEY],
+    mutationFn: ({
+      messageId,
+      attachmentId,
+    }: {
+      messageId: string;
+      attachmentId: string;
+    }) => streamAttachmentById(messageId, attachmentId),
+    onError,
   });
 };

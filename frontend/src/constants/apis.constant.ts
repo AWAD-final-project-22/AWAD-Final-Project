@@ -54,7 +54,8 @@ export const API_PATH = {
       API_KEY: "modifyEmail",
     },
     ATTACHMENT_DOWNLOAD: {
-      API_PATH: (id: string) => `/mail/attachments/${id}/download`,
+      API_PATH: (messageId: string, attachmentId: string) =>
+        `/mail/attachments/${messageId}/${attachmentId}`,
       API_KEY: "attachmentDownload",
     },
   },
