@@ -1,16 +1,16 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Param, 
-  Query, 
-  UseGuards, 
-  Req, 
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Query,
+  UseGuards,
+  Req,
   Body,
   Res,
   StreamableFile,
   UseInterceptors,
-  UploadedFiles
+  UploadedFiles,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
@@ -65,7 +65,7 @@ export class GmailController {
   @Get('mailboxes/:mailboxId/emails')
   @ApiGetEmails()
   async getEmails(
-    @Req() req: any, 
+    @Req() req: any,
     @Param('mailboxId') mailboxId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -73,9 +73,9 @@ export class GmailController {
     const mbId = mailboxId || 'inbox';
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20;
-    
+
     return await this.getEmailsUseCase.execute(
-      req.user.sub, 
+      req.user.sub,
       mbId,
       pageNum,
       limitNum,
@@ -86,37 +86,46 @@ export class GmailController {
   @ApiSendEmail()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 10 }]))
   async sendEmail(
-    @Req() req: any, 
+    @Req() req: any,
     @Body() body: any,
-    @UploadedFiles() uploadedFiles?: { files?: any[] }
+    @UploadedFiles() uploadedFiles?: { files?: any[] },
   ) {
     // Helper to filter valid email addresses
     const filterValidEmails = (value: any): string[] | undefined => {
       if (!value) return undefined;
       const arr = Array.isArray(value) ? value : [value];
-      const filtered = arr.filter(email => 
-        email && 
-        typeof email === 'string' && 
-        email.trim() !== '' && 
-        email !== 'string' && 
-        email.includes('@')
+      const filtered = arr.filter(
+        (email) =>
+          email &&
+          typeof email === 'string' &&
+          email.trim() !== '' &&
+          email !== 'string' &&
+          email.includes('@'),
       );
       return filtered.length > 0 ? filtered : undefined;
     };
 
     // Parse array fields from multipart/form-data
-    const to = Array.isArray(body.to) ? body.to : (body.to ? [body.to] : []);
+    const to = Array.isArray(body.to) ? body.to : body.to ? [body.to] : [];
     const cc = filterValidEmails(body.cc);
     const bcc = filterValidEmails(body.bcc);
 
     // Convert uploaded files to base64 attachments
-    let attachments: Array<{ filename: string; content: string; mimeType: string }> = [];
-    
+    let attachments: Array<{
+      filename: string;
+      content: string;
+      mimeType: string;
+    }> = [];
+
+    if (body.attachments && Array.isArray(body.attachments)) {
+      attachments = [...body.attachments];
+    }
+
     if (uploadedFiles?.files) {
-      const fileAttachments = uploadedFiles.files.map(file => ({
+      const fileAttachments = uploadedFiles.files.map((file) => ({
         filename: file.originalname,
         content: file.buffer.toString('base64'),
-        mimeType: file.mimetype
+        mimeType: file.mimetype,
       }));
       attachments = [...attachments, ...fileAttachments];
     }
@@ -138,36 +147,50 @@ export class GmailController {
     @Req() req: any,
     @Param('id') id: string,
     @Body() body: any,
-    @UploadedFiles() uploadedFiles?: { files?: any[] }
+    @UploadedFiles() uploadedFiles?: { files?: any[] },
   ) {
     // Helper to filter valid email addresses
     const filterValidEmails = (value: any): string[] | undefined => {
       if (!value) return undefined;
       const arr = Array.isArray(value) ? value : [value];
-      const filtered = arr.filter(email => 
-        email && 
-        typeof email === 'string' && 
-        email.trim() !== '' && 
-        email !== 'string' && 
-        email.includes('@')
+      const filtered = arr.filter(
+        (email) =>
+          email &&
+          typeof email === 'string' &&
+          email.trim() !== '' &&
+          email !== 'string' &&
+          email.includes('@'),
       );
       return filtered.length > 0 ? filtered : undefined;
     };
 
     // Parse email fields
-    const to = body.to ? (Array.isArray(body.to) ? body.to : [body.to]) : undefined;
+    const to = body.to
+      ? Array.isArray(body.to)
+        ? body.to
+        : [body.to]
+      : undefined;
     const cc = filterValidEmails(body.cc);
     const bcc = filterValidEmails(body.bcc);
-    const includeOriginal = body.includeOriginal === 'true' || body.includeOriginal === true;
+    const includeOriginal =
+      body.includeOriginal === 'true' || body.includeOriginal === true;
 
     // Convert uploaded files to base64 attachments
-    let attachments: Array<{ filename: string; content: string; mimeType: string }> = [];
-    
+    let attachments: Array<{
+      filename: string;
+      content: string;
+      mimeType: string;
+    }> = [];
+
+    if (body.attachments && Array.isArray(body.attachments)) {
+      attachments = [...body.attachments];
+    }
+
     if (uploadedFiles?.files) {
-      const fileAttachments = uploadedFiles.files.map(file => ({
+      const fileAttachments = uploadedFiles.files.map((file) => ({
         filename: file.originalname,
         content: file.buffer.toString('base64'),
-        mimeType: file.mimetype
+        mimeType: file.mimetype,
       }));
       attachments = [...attachments, ...fileAttachments];
     }
@@ -220,4 +243,3 @@ export class GmailController {
     return new StreamableFile(result.data);
   }
 }
-

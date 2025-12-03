@@ -61,8 +61,11 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
   const handleReplyClick = () => {
     if (!email) return;
 
+    const fromAddress = email.from || email.sender || "";
+    const senderEmail = fromAddress.match(/<([^>]+)>/)?.[1] || fromAddress;
+
     const params: IReplyEmailParams = {
-      to: [email.sender],
+      to: [senderEmail],
       body: email.preview || "",
       includeOriginal: true,
     };

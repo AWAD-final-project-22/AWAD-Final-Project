@@ -207,7 +207,11 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
   const handleReplyEmail = async (params: IReplyEmailParams) => {
     try {
-      await replyEmail({ id: selectedMailbox, params });
+      if (!selectedEmail) {
+        notification.error({ message: "No email selected to reply" });
+        return;
+      }
+      await replyEmail({ id: selectedEmail, params });
     } catch (error) {
       console.error("Reply Email Failed:", error);
     }
