@@ -13,12 +13,14 @@ export function middleware(req: NextRequest) {
   }
 
   if (refreshToken && pathname === '/login') {
-    return NextResponse.redirect(new URL('/', req.url));
+    return NextResponse.redirect(new URL('/inbox', req.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/'],
+  matcher: [
+    '/((?!api|_next/static|_next/image|robots.txt|public|images|manifest.json|sw.js|favicon.ico|workbox-*).*)',
+  ],
 };

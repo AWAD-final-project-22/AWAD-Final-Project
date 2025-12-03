@@ -1,6 +1,5 @@
-import { IUserRepository } from '../../../domain/repositories/user.repository';
-import { IGmailService, GmailMessage } from '../../ports/gmail.port';
-import { IEncryptionService } from '../../ports/encryption.port';
+import { IGmailService, GmailMessage, ListMessagesParams } from '../../ports/gmail.port';
+import { BaseGmailUseCase } from './base-gmail.use-case';
 
 const SYSTEM_LABELS_MAP: Record<string, string> = {
   inbox: 'INBOX',
@@ -12,36 +11,34 @@ const SYSTEM_LABELS_MAP: Record<string, string> = {
   important: 'IMPORTANT',
 };
 
-export class GetEmailsUseCase {
-  constructor(
-    private readonly userRepository: IUserRepository,
-    private readonly gmailService: IGmailService,
-    private readonly encryptionService: IEncryptionService,
-  ) {}
-
-  async execute(userId: string, mailboxId: string = 'INBOX') {
-    const user = await this.userRepository.findById(userId);
-    if (!user || !user.googleAccessToken) {
-      throw new Error('User not found or not linked with Google');
-    }
-
-    const accessToken = this.encryptionService.decrypt(user.googleAccessToken);
+export class GetEmailsUseCase extends BaseGmailUseCase {
+  async execute(
+    userId: string, 
+    mailboxId: string = 'INBOX',
+    page: number = 1,
+    limit: number = 20,
+  ) {
+    const accessToken = await this.getAccessToken(userId);
 
     // Normalize mailboxId and map to Gmail Label ID
     const normalizedId = mailboxId.toLowerCase();
     const labelId = SYSTEM_LABELS_MAP[normalizedId] || mailboxId;
 
-    // Query theo Label
-    const query = `label:${labelId}`;
+    // Params cho Gmail API
+    const params: ListMessagesParams = {
+      userId: 'me',
+      labelIds: [labelId],
+      maxResults: limit,
+    };
 
-    const messages = await this.gmailService.listMessages(
-      accessToken,
-      'me',
-      query,
-      20,
-    );
+    const response = await this.gmailService.listMessages(accessToken, params);
 
-    return messages.map((msg) => this.mapToEmailEntity(msg, mailboxId));
+    return {
+      emails: response.messages.map((msg) => this.mapToEmailEntity(msg, mailboxId)),
+      page,
+      limit,
+      total: response.resultSizeEstimate || 0,
+    };
   }
 
   private mapToEmailEntity(msg: GmailMessage, mailboxId: string) {

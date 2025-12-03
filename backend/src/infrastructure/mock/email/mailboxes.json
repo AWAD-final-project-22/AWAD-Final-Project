@@ -1,7 +1,0 @@
-[
-  { "id": "inbox", "name": "Inbox" },
-  { "id": "sent", "name": "Sent" },
-  { "id": "drafts", "name": "Drafts" },
-  { "id": "spam", "name": "Spam" },
-  { "id": "trash", "name": "Trash" }
-]

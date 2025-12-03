@@ -33,7 +33,7 @@ export const useLogin = () => {
   const onFinish = async (values: ILoginParams) => {
     try {
       const response = await login(values);
-      dispatch(setAccessToken(response?.data?.accessToken));
+      dispatch(setAccessToken(response.data.accessToken));
       router.push("/inbox");
     } catch (error) {
       console.error("Login error:", error);

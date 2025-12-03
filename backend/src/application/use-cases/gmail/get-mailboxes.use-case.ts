@@ -1,20 +1,14 @@
-import { IUserRepository } from '../../../domain/repositories/user.repository';
-import { IGmailService } from '../../ports/gmail.port';
-import { IEncryptionService } from '../../ports/encryption.port';
+import { BaseGmailUseCase } from './base-gmail.use-case';
 
-export class GetMailboxesUseCase {
-  constructor(
-    private readonly userRepository: IUserRepository,
-    private readonly gmailService: IGmailService,
-    private readonly encryptionService: IEncryptionService,
-  ) {}
-
+export class GetMailboxesUseCase extends BaseGmailUseCase {
   async execute(userId: string) {
-    const user = await this.userRepository.findById(userId);
-    if (!user || !user.googleAccessToken) {
-      throw new Error('User not found or not linked with Google');
-    }
+    const accessToken = await this.getAccessToken(userId);
 
+    // Google Gmail API gọi Labels là Mailboxes
+    // Vì IGmailService ta chưa define getLabels, ta tạm dùng getProfile hoặc listMessages
+    // Thực tế ta cần thêm getLabels vào IGmailService.
+    // Nhưng để đơn giản, ta giả lập mailboxes static hoặc gọi API nếu bạn muốn update Port.
+    
     return [
       { id: 'INBOX', name: 'Inbox' },
       { id: 'SENT', name: 'Sent' },

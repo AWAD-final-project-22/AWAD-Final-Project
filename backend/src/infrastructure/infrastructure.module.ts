@@ -3,12 +3,10 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaService } from './database/prisma.service';
 import { UserRepositoryImpl } from './repositories/user.repository.impl';
-import { MockEmailRepositoryImpl } from './repositories/mock-email.repository.impl';
 import { PasswordServiceImpl } from './services/password.service';
 import { TokenServiceImpl } from './services/token.service';
 
 import { IUserRepository } from '../domain/repositories/user.repository';
-import { IEmailRepository } from '../domain/repositories/email.repository';
 import { IPasswordService } from '../application/ports/password.port';
 import { ITokenService } from '../application/ports/token.port';
 import { EncryptionServiceImpl } from './services/encryption.service';
@@ -35,10 +33,6 @@ import { IGmailService } from '../application/ports/gmail.port';
       useClass: UserRepositoryImpl,
     },
     {
-      provide: IEmailRepository,
-      useClass: MockEmailRepositoryImpl,
-    },
-    {
       provide: IPasswordService,
       useClass: PasswordServiceImpl,
     },
@@ -59,7 +53,6 @@ import { IGmailService } from '../application/ports/gmail.port';
     PrismaService,
     IEncryptionService,
     IUserRepository,
-    IEmailRepository,
     IPasswordService,
     ITokenService,
     IGmailService,
