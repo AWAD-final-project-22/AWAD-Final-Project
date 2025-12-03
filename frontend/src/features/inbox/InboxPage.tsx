@@ -34,11 +34,13 @@ const InboxPage: React.FC = () => {
     handleEmailClick,
     handleBackToList,
     filteredEmails,
+    isEmailsLoading,
     selectedEmailData,
     handleSendEmail,
     isSendEmailPending,
     handleReplyEmail,
     isReplyEmailPending,
+    handlePageChange,
   } = useInbox({ isMobile });
 
   return (
@@ -75,6 +77,8 @@ const InboxPage: React.FC = () => {
               handleEmailClick={handleEmailClick}
               isMobile={isMobile}
               selectedEmail={selectedEmailData}
+              isEmailsLoading={isEmailsLoading}
+              handlePageChange={handlePageChange}
             />
 
             <EmailDetailPanel

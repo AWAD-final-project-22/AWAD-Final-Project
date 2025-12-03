@@ -1,5 +1,6 @@
 'use client';
 
+import { LoadingSpin } from '@/components/LoadingSpin';
 import {
   DeleteOutlined,
   DownloadOutlined,
@@ -7,7 +8,7 @@ import {
   SendOutlined,
   StarOutlined,
 } from '@ant-design/icons';
-import { Button, Card, Divider, Spin, Tooltip, Typography } from 'antd';
+import { Button, Card, Divider, Tooltip, Typography } from 'antd';
 import { useState } from 'react';
 import {
   IEmailDetail,
@@ -15,8 +16,8 @@ import {
   ISendMessageParams,
 } from '../interfaces/mailAPI.interface';
 import { EmailDetail } from '../styles/InboxPage.style';
-import { EmptyState } from './EmptyState';
 import { ReplyEmailModal } from './ReplyEmailModal';
+import { EmptyState } from '@/components/EmptyState';
 
 const { Title, Text } = Typography;
 
@@ -54,7 +55,7 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
   };
 
   const renderLoading = () => {
-    return <Spin></Spin>;
+    return <LoadingSpin />;
   };
   return (
     <EmailDetail $show={show}>
@@ -152,7 +153,7 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
       ) : isEmailDetailLoading ? (
         renderLoading()
       ) : (
-        <EmptyState />
+        <EmptyState message='Select an email to view its content' />
       )}
     </EmailDetail>
   );

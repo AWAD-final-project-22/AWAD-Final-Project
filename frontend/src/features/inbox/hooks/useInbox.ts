@@ -2,7 +2,8 @@ import { LIMIT_DEFAULT, PAGE_DEFAULT } from '@/constants/common.constant';
 import { PARAMS_URL } from '@/constants/params.constant';
 import { useControlParams } from '@/hooks/useControlParams';
 import { App } from 'antd';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { MAILBOX_DEFAULT_NAMES } from '../constants/emails.constant';
 import {
   IEmail,
   IReplyEmailParams,
@@ -16,7 +17,6 @@ import {
   useMutationReplyEmailById,
   useMutationSendEmail,
 } from './mailAPIs';
-import { MAILBOX_DEFAULT_NAMES } from '../constants/emails.constant';
 
 interface InBoxProps {
   mailBoxID?: string;
@@ -25,7 +25,7 @@ interface InBoxProps {
 }
 
 export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
-  const { searchParams } = useControlParams();
+  const { searchParams, updateSearchQuery } = useControlParams();
   const { notification } = App.useApp();
 
   const [checkedEmails, setCheckedEmails] = useState<Set<string>>(new Set());
@@ -49,9 +49,6 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     { page: Number(pPage), limit: Number(pLimit) },
     selectedMailbox,
   );
-
-  // const mailboxes = MOCK_MAILBOXES;
-  // const emails = MOCK_EMAILS;
 
   const { data: emailDetail, isLoading: isEmailDetailLoading } =
     useGetEmailDetailById(selectedEmail || '');
@@ -181,6 +178,19 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     }
   };
 
+  const handlePageChange = (value: number) => {
+    updateSearchQuery({ [PARAMS_URL.PAGE]: value }, true);
+  };
+
+  useEffect(() => {
+    if (!isMobile && collapsed) {
+      setCollapsed(false);
+    }
+    if (isMobile && !collapsed) {
+      setCollapsed(true);
+    }
+  }, [isMobile]);
+
   return {
     mailboxes,
     isMailboxesLoading,
@@ -218,5 +228,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
     filteredEmails,
     selectedEmailData,
+
+    handlePageChange,
   };
 };
