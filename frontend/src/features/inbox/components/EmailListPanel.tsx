@@ -1,6 +1,6 @@
 'use client';
 import { Button, Checkbox, Pagination, Tooltip, Typography } from 'antd';
-import { IEmail } from '../interfaces/mailAPI.interface';
+import { IEmail, IEmailResponse } from '../interfaces/mailAPI.interface';
 import {
   DivEmailList,
   EmailItem,
@@ -28,6 +28,7 @@ interface EmailListPanelProps {
   showEmailList: boolean;
   checkedEmails: Set<string>;
   handleSelectAll: (checked: boolean) => void;
+  emails?: IEmailResponse;
   filteredEmails: IEmail[];
   isEmailsLoading: boolean;
   handleCheckboxChange: (id: string, checked: boolean) => void;
@@ -48,9 +49,10 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
   selectedEmail,
   isEmailsLoading = false,
   handlePageChange,
+  emails,
 }) => {
   const renderEmailList = () => {
-    if (!filteredEmails || filteredEmails.length === 0) {
+    if (!filteredEmails) {
       return <EmptyState message='No emails to display' />;
     }
     if (isEmailsLoading) {
@@ -148,7 +150,7 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
         </DivEmailList>
         <Pagination
           size='small'
-          total={filteredEmails?.length || 0}
+          total={emails?.total || 0}
           pageSize={20}
           showSizeChanger={false}
           style={{ padding: '8px', textAlign: 'center' }}
