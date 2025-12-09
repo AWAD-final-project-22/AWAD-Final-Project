@@ -22,6 +22,7 @@ import {
 import { formatDate } from '@/helpers/day.helper';
 import { EmptyState } from '@/components/EmptyState';
 import { LoadingSpin } from '@/components/LoadingSpin';
+import { ViewToggle } from '@/components/ViewToggle';
 const { Text } = Typography;
 
 interface EmailListPanelProps {
@@ -187,6 +188,7 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
           <Button type='text' icon={<MailOutlined />} />
         </Tooltip>
         <div style={{ flex: 1 }} />
+        <ViewToggle currentView="list" />
       </Toolbar>
       {renderEmailList()}
     </EmailList>
