@@ -188,7 +188,7 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
           <Button type='text' icon={<MailOutlined />} />
         </Tooltip>
         <div style={{ flex: 1 }} />
-        <ViewToggle currentView="list" />
+        <ViewToggle currentView='list' />
       </Toolbar>
       {renderEmailList()}
     </EmailList>

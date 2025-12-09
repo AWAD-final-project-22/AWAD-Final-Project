@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/components/EmptyState';
 import { LoadingSpin } from '@/components/LoadingSpin';
 import {
   DeleteOutlined,
@@ -9,7 +10,7 @@ import {
   SendOutlined,
   StarOutlined,
 } from '@ant-design/icons';
-import { Button, Card, Divider, Tooltip, Typography } from 'antd';
+import { Button, Divider, Tooltip, Typography } from 'antd';
 import { useState } from 'react';
 import { getFileIcon } from '../helpers/fileIcon.helper';
 import {
@@ -21,6 +22,7 @@ import {
   AttachmentCard,
   AttachmentContainer,
   AttachmentList,
+  CardEmailDetail,
   EmailDetail,
   FileIconWrapper,
   FileInfo,
@@ -28,7 +30,6 @@ import {
   FileName,
   FileSize,
 } from '../styles/InboxPage.style';
-import { EmptyState } from '@/components/EmptyState';
 import { ReplyEmailModal } from './ReplyEmailModal';
 
 const { Title, Text } = Typography;
@@ -93,10 +94,10 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
     <EmailDetail $show={show}>
       {email ? (
         <>
-          <Card
+          <CardEmailDetail
             title={
               <div>
-                <Title level={4} style={{ marginBottom: 0, marginTop: 10 }}>
+                <Title level={4} style={{ marginBottom: -10, marginTop: 15 }}>
                   {email.subject}
                 </Title>
                 <div
@@ -134,12 +135,6 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
                 </div>
               </div>
             }
-            style={{
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              overflowY: 'auto',
-            }}
           >
             <div style={{ marginBottom: 16 }}>
               {email.snippet && (
@@ -200,7 +195,7 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
                 </AttachmentList>
               </AttachmentContainer>
             )}
-          </Card>
+          </CardEmailDetail>
 
           <ReplyEmailModal
             open={replyModalOpen}
