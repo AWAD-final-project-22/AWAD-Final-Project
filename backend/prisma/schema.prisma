@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,15 +8,53 @@ datasource db {
 }
 
 model User {
-  id           String  @id @default(uuid())
-  email        String  @unique
-  password     String?
-  name         String?
-  provider     String  @default("local")
-  refreshToken String?
-  googleAccessToken String?
+  id                 String           @id @default(uuid())
+  email              String           @unique
+  password           String?
+  name               String?
+  provider           String           @default("local")
+  refreshToken       String?
+  googleAccessToken  String?
   googleRefreshToken String?
-  googleTokenExpiry DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  googleTokenExpiry  DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  emailWorkflows     EmailWorkflow[]  // Add this line
+}
+
+model EmailWorkflow {
+  id             String         @id @default(uuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  gmailMessageId String
+  subject        String
+  from           String
+  date           DateTime
+  snippet        String?        @db.Text
+  
+  status         WorkflowStatus @default(INBOX)
+  priority       Int            @default(0) 
+  deadline       DateTime?
+  snoozedUntil   DateTime?
+  
+  aiSummary      String?        @db.Text
+  urgencyScore   Float?       
+  
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  
+  @@unique([userId, gmailMessageId])
+  @@index([userId, status])
+  @@index([userId, snoozedUntil])
+  @@index([userId, deadline])
+  @@map("email_workflows")
+}
+
+enum WorkflowStatus {
+  INBOX
+  TODO
+  IN_PROGRESS
+  DONE
+  SNOOZED
 }

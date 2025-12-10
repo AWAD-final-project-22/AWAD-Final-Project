@@ -61,6 +61,8 @@ export class GoogleSignInUseCase {
     const accessToken = this.tokenService.generateAccessToken(user);
     const refreshToken = this.tokenService.generateRefreshToken(user);
 
+    console.log('Generated refresh token:',accessToken , refreshToken);
+
     const refreshHash = await this.passwordService.hashPassword(refreshToken);
     await this.userRepository.updateRefreshToken(user.id, refreshHash);
 

@@ -49,6 +49,10 @@ async function bootstrap() {
       'Mail',
       'Gmail integration - mailboxes, emails, send, reply, modify',
     )
+    .addTag(
+      'Workflows',
+      'Email workflow management - Kanban board (INBOX → TODO → IN_PROGRESS → DONE / SNOOZED) with AI summarization',
+    )
     .addServer(
       process.env.BACKEND_URL || 'http://localhost:3000',
       'Development server',

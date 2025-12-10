@@ -41,7 +41,12 @@ export class JwtAuthGuard implements CanActivate {
           'changeme',
       });
 
-      req.user = payload;
+      // Map JWT payload to req.user with userId field
+      req.user = {
+        userId: payload.sub,
+        email: payload.email,
+        ...payload,
+      };
 
       return true;
     } catch (err) {

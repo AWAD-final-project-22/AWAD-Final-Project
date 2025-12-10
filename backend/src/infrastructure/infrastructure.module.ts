@@ -13,6 +13,11 @@ import { EncryptionServiceImpl } from './services/encryption.service';
 import { IEncryptionService } from '../application/ports/encryption.port';
 import { GmailServiceImpl } from './services/gmail.service';
 import { IGmailService } from '../application/ports/gmail.port';
+import { EmailWorkflowRepositoryImpl } from './repositories/emailWorkflowRepository.impl';
+import { AiSummaryService } from './services/ai-summary.service';
+import { EmailProcessorService } from './services/email-processor.service';
+import { InboxWorkflowService } from './services/inbox-workflow.service';
+import { GmailTokenService } from './services/gmail-token.service';
 
 @Module({
   imports: [
@@ -48,6 +53,17 @@ import { IGmailService } from '../application/ports/gmail.port';
       provide: IGmailService,
       useClass: GmailServiceImpl,
     },
+    {
+      provide: 'IEmailWorkflowRepository',
+      useClass: EmailWorkflowRepositoryImpl,
+    },
+    {
+      provide: 'IAiSummaryPort',
+      useClass: AiSummaryService,
+    },
+    GmailTokenService,
+    EmailProcessorService,
+    InboxWorkflowService,
   ],
   exports: [
     PrismaService,
@@ -56,6 +72,11 @@ import { IGmailService } from '../application/ports/gmail.port';
     IPasswordService,
     ITokenService,
     IGmailService,
+    'IEmailWorkflowRepository',
+    'IAiSummaryPort',
+    GmailTokenService,
+    EmailProcessorService,
+    InboxWorkflowService,
     JwtModule, // Export JwtModule so PresentationModule can use it (via AuthGuard)
   ],
 })
