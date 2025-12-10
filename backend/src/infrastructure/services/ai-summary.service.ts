@@ -15,16 +15,12 @@ export class AiSummaryService implements IAiSummaryPort {
       this.logger.warn('GEMINI_API_KEY not configured. AI summarization will be disabled.');
     }
     this.genAI = new GoogleGenerativeAI(apiKey || 'dummy-key');
-    // Use gemini-pro for stable v1beta API
+
     this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   }
 
-  /**
-   * Batch AI summarize: phân tích nhiều email trong 1 request
-   */
   async summarizeEmailBatch(emails: {id: string, subject: string, body: string}[]): Promise<{[id: string]: AiSummaryResult}> {
     try {
-      // Tạo prompt cho nhiều emails
       const emailsText = emails
         .map(
           (email, index) => `---\nEmail ${index + 1} (ID: ${email.id}):\nSubject: ${email.subject}\nBody: ${email.body.substring(0, 500)}... (truncated)\n---`,
@@ -43,7 +39,6 @@ export class AiSummaryService implements IAiSummaryPort {
         throw new Error('Gemini returned empty response');
       }
 
-      // Parse JSON từ response (có thể có ```json wrapper)
       let jsonText = responseText;
       const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/) || responseText.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
@@ -53,7 +48,6 @@ export class AiSummaryService implements IAiSummaryPort {
       const parsedResults: Array<{ id: string; summary: string; urgencyScore: number }> =
         JSON.parse(jsonText);
 
-      // Convert array thành object map {messageId: result}
       const batchResult: {[id: string]: AiSummaryResult} = {};
       for (const result of parsedResults) {
         batchResult[result.id] = {
@@ -68,7 +62,6 @@ export class AiSummaryService implements IAiSummaryPort {
     } catch (error) {
       this.logger.error('[Batch AI] Failed to summarize emails with Gemini', error);
 
-      // Fallback: Return default values cho tất cả emails
       const fallbackResult: {[id: string]: AiSummaryResult} = {};
       for (const email of emails) {
         fallbackResult[email.id] = {

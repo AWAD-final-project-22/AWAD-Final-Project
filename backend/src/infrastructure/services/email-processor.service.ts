@@ -22,17 +22,10 @@ export class EmailProcessorService {
     private readonly aiSummaryPort: IAiSummaryPort,
   ) {}
 
-  /**
-   * Xử lý một email từ Gmail:
-   * 1. Check email đã có trong DB chưa
-   * 2. Nếu có → return từ DB
-   * 3. Nếu chưa → Fetch full email → AI Summarize → Save DB
-   */
   async processGmailEmail(
     userId: string,
     gmailMessageId: string,
   ): Promise<EmailWorkflowEntity> {
-    // Check DB
     const existingWorkflow = await this.workflowRepository.findByGmailMessageId(
       userId,
       gmailMessageId,
@@ -43,22 +36,17 @@ export class EmailProcessorService {
       return existingWorkflow;
     }
 
-    // Chưa có → Fetch full email
     this.logger.log(`[Email ${gmailMessageId}] Not in DB, fetching full email`);
     
-    // Get valid access token
     const accessToken = await this.gmailTokenService.getAccessToken(userId);
-    
-    // Fetch full email from Gmail (use "me" for Gmail API)
+
     const fullEmail = await this.gmailService.getMessage(accessToken, 'me', gmailMessageId);
 
-    // Extract email data
     const headers = fullEmail.payload?.headers || [];
     const subject = headers.find((h: any) => h.name.toLowerCase() === 'subject')?.value || '(No Subject)';
     const from = headers.find((h: any) => h.name.toLowerCase() === 'from')?.value || 'unknown@example.com';
     const date = headers.find((h: any) => h.name.toLowerCase() === 'date')?.value;
     
-    // Extract body
     let body = fullEmail.snippet || '';
     if (fullEmail.payload?.body?.data) {
       body = Buffer.from(fullEmail.payload.body.data, 'base64').toString('utf-8');
@@ -69,14 +57,12 @@ export class EmailProcessorService {
       }
     }
 
-    // AI Summarize
     this.logger.log(`[Email ${gmailMessageId}] Calling AI summarize`);
     const { summary, urgencyScore } = await this.aiSummaryPort.summarizeEmail(
       body || fullEmail.snippet || '',
       subject,
     );
 
-    // Save to DB
     const newWorkflow = await this.workflowRepository.create({
       userId,
       gmailMessageId,
@@ -94,17 +80,10 @@ export class EmailProcessorService {
     return newWorkflow;
   }
 
-  /**
-   * Helper function to delay execution (rate limiting)
-   */
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  /**
-   * Xử lý batch emails từ Gmail
-   * Rate limiting: 4 seconds delay between API calls to avoid 429 errors
-   */
   async processBatchGmailEmails(
     userId: string,
     gmailMessageIds: string[],
@@ -112,7 +91,6 @@ export class EmailProcessorService {
     const results: EmailWorkflowEntity[] = [];
     const accessToken = await this.gmailTokenService.getAccessToken(userId);
 
-    // 1. Kiểm tra email đã tồn tại chưa, chỉ xử lý email chưa có trong DB
     const toProcess: string[] = [];
     for (const messageId of gmailMessageIds) {
       const existing = await this.workflowRepository.findByGmailMessageId(userId, messageId);
@@ -124,7 +102,6 @@ export class EmailProcessorService {
       }
     }
 
-    // 2. Fetch full emails chỉ cho email chưa có
     const fullEmails: any[] = [];
     for (const messageId of toProcess) {
       try {
@@ -136,7 +113,6 @@ export class EmailProcessorService {
       }
     }
 
-    // 3. Chuẩn bị input cho batch AI
     const batchInput = fullEmails.map(({ messageId, fullEmail }) => {
       const headers = fullEmail.payload?.headers || [];
       const subject = headers.find((h: any) => h.name.toLowerCase() === 'subject')?.value || '(No Subject)';
@@ -152,12 +128,10 @@ export class EmailProcessorService {
       return { id: messageId, subject, body };
     });
 
-    // 4. Gọi AI Gemini 1 lần cho các email chưa có
     if (batchInput.length > 0) {
       this.logger.log(`[Batch] Calling AI summarize for ${batchInput.length} emails...`);
       const aiResults = await this.aiSummaryPort.summarizeEmailBatch(batchInput);
 
-      // 5. Lưu từng email vào DB với kết quả AI
       for (const { messageId, fullEmail } of fullEmails) {
         try {
           const headers = fullEmail.payload?.headers || [];

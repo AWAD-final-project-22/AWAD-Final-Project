@@ -34,8 +34,6 @@ export class InboxWorkflowService {
 
     const accessToken = await this.gmailTokenService.getAccessToken(userId);
 
-    // Gmail API không hỗ trợ offset số, nên phải lấy nhiều hơn rồi slice thủ công
-    // Giả sử lấy tối đa 100 email gần nhất, sau đó slice theo offset/limit FE truyền vào
     const fetchCount = Math.max(limit + offset, 20);
     const gmailResponse = await this.gmailService.listMessages(accessToken, {
       labelIds: ['INBOX'],
@@ -48,7 +46,6 @@ export class InboxWorkflowService {
       return { data: [], total: 0 };
     }
 
-    // Slice theo offset/limit FE truyền vào
     const allMessageIds = gmailResponse.messages.map((msg: any) => msg.id);
     const messageIds = allMessageIds.slice(offset, offset + limit);
     const processedEmails = await this.emailProcessorService.processBatchGmailEmails(
@@ -56,7 +53,6 @@ export class InboxWorkflowService {
       messageIds,
     );
 
-    // Count total
     const total = await this.workflowRepository.countByUserAndStatus(
       userId,
       WorkflowStatus.INBOX,
