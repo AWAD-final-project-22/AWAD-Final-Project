@@ -124,7 +124,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleCheckboxChange = useCallback(
@@ -217,6 +217,17 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const handlePageChange = (value: number) => {
     updateSearchQuery({ [PARAMS_URL.PAGE]: value }, true);
   };
+
+  // Show email detail when mailID is provided from URL (for Kanban navigation)
+  useEffect(() => {
+    if (mailID) {
+      setSelectedEmail(mailID);
+      if (isMobile) {
+        setShowEmailList(false);
+        setShowEmailDetail(true);
+      }
+    }
+  }, [mailID, isMobile]);
 
   useEffect(() => {
     if (!isMobile && collapsed) {

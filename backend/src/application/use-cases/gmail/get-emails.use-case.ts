@@ -15,12 +15,11 @@ export class GetEmailsUseCase extends BaseGmailUseCase {
   async execute(
     userId: string, 
     mailboxId: string = 'INBOX',
-    page: number = 1,
     limit: number = 20,
+    pageToken?: string,
   ) {
     const accessToken = await this.getAccessToken(userId);
 
-    // Normalize mailboxId and map to Gmail Label ID
     const normalizedId = mailboxId.toLowerCase();
     const labelId = SYSTEM_LABELS_MAP[normalizedId] || mailboxId;
 
@@ -29,13 +28,14 @@ export class GetEmailsUseCase extends BaseGmailUseCase {
       userId: 'me',
       labelIds: [labelId],
       maxResults: limit,
+      pageToken: pageToken,
     };
 
     const response = await this.gmailService.listMessages(accessToken, params);
 
     return {
       emails: response.messages.map((msg) => this.mapToEmailEntity(msg, mailboxId)),
-      page,
+      nextPageToken: response.nextPageToken,
       limit,
       total: response.resultSizeEstimate || 0,
     };

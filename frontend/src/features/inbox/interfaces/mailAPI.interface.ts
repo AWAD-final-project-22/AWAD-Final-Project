@@ -13,6 +13,8 @@ export interface IEmail {
   isRead?: boolean;
   isStarred?: boolean;
   hasAttachment?: boolean;
+  aiSummary?: string;
+  urgencyScore?: number;
 }
 
 export interface IEmailDetail extends IEmail {

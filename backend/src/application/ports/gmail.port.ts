@@ -1,3 +1,21 @@
+export interface GmailHeader {
+  name: string;
+  value: string;
+}
+
+export interface GmailMessagePart {
+  partId?: string;
+  mimeType: string;
+  filename?: string;
+  headers?: GmailHeader[];
+  body?: {
+    attachmentId?: string;
+    size?: number;
+    data?: string;
+  };
+  parts?: GmailMessagePart[];
+}
+
 export interface GmailMessage {
   id: string;
   threadId: string;
@@ -46,7 +64,7 @@ export interface ListMessagesResponse {
 
 export interface EmailAttachment {
   filename: string;
-  content: string;  // base64 encoded content
+  content: string;  
   mimeType: string;
 }
 
@@ -56,9 +74,9 @@ export interface SendMessageParams {
   body: string;
   cc?: string[];
   bcc?: string[];
-  threadId?: string;  // reply within a thread
-  replyToMessageId?: string;  // reply to a specific message
-  attachments?: EmailAttachment[];  // file attachments
+  threadId?: string;  
+  replyToMessageId?: string;  
+  attachments?: EmailAttachment[];  
 }
 
 export interface ModifyMessageParams {

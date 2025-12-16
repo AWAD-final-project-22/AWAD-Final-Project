@@ -13,6 +13,36 @@ import {
   UploadedFiles,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import type { Request, Response } from 'express';
+
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  buffer: Buffer;
+  size: number;
+}
+
+interface UploadedFileFields {
+  files?: MulterFile[];
+}
+
+interface SendEmailFormData {
+  to: string | string[];
+  cc?: string | string[];
+  bcc?: string | string[];
+  subject: string;
+  body: string;
+}
+
+interface ReplyEmailFormData {
+  to?: string | string[];
+  cc?: string | string[];
+  bcc?: string | string[];
+  body: string;
+  includeOriginal?: string | boolean;
+}
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import {
   ApiGetMailboxes,
@@ -52,33 +82,32 @@ export class GmailController {
 
   @Get('mailboxes')
   @ApiGetMailboxes()
-  async getMailboxes(@Req() req: any) {
+  async getMailboxes(@Req() req: Request & { user: { sub: string } }) {
     return await this.getLabelsUseCase.execute(req.user.sub);
   }
 
   @Get('emails/:id')
   @ApiGetEmailDetail()
-  async getEmailDetail(@Req() req: any, @Param('id') id: string) {
+  async getEmailDetail(@Req() req: Request & { user: { sub: string } }, @Param('id') id: string) {
     return await this.getEmailDetailUseCase.execute(req.user.sub, id);
   }
 
   @Get('mailboxes/:mailboxId/emails')
   @ApiGetEmails()
   async getEmails(
-    @Req() req: any,
+    @Req() req: any, 
     @Param('mailboxId') mailboxId: string,
-    @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('pageToken') pageToken?: string,
   ) {
     const mbId = mailboxId || 'inbox';
-    const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20;
 
     return await this.getEmailsUseCase.execute(
       req.user.sub,
       mbId,
-      pageNum,
       limitNum,
+      pageToken,
     );
   }
 
@@ -86,12 +115,12 @@ export class GmailController {
   @ApiSendEmail()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 10 }]))
   async sendEmail(
-    @Req() req: any,
+    @Req() req: any, 
     @Body() body: any,
-    @UploadedFiles() uploadedFiles?: { files?: any[] },
+    @UploadedFiles() uploadedFiles?: { files?: any[] }
   ) {
     // Helper to filter valid email addresses
-    const filterValidEmails = (value: any): string[] | undefined => {
+    const filterValidEmails = (value: unknown): string[] | undefined => {
       if (!value) return undefined;
       const arr = Array.isArray(value) ? value : [value];
       const filtered = arr.filter(
@@ -144,13 +173,13 @@ export class GmailController {
   @ApiReplyEmail()
   @UseInterceptors(FileFieldsInterceptor([{ name: 'files', maxCount: 10 }]))
   async replyEmail(
-    @Req() req: any,
+    @Req() req: Request & { user: { sub: string } },
     @Param('id') id: string,
     @Body() body: any,
-    @UploadedFiles() uploadedFiles?: { files?: any[] },
+    @UploadedFiles() uploadedFiles?: { files?: any[] }
   ) {
     // Helper to filter valid email addresses
-    const filterValidEmails = (value: any): string[] | undefined => {
+    const filterValidEmails = (value: unknown): string[] | undefined => {
       if (!value) return undefined;
       const arr = Array.isArray(value) ? value : [value];
       const filtered = arr.filter(
@@ -208,7 +237,7 @@ export class GmailController {
   @Post('emails/:id/modify')
   @ApiModifyEmail()
   async modifyEmail(
-    @Req() req: any,
+    @Req() req: Request & { user: { sub: string } },
     @Param('id') id: string,
     @Body() dto: ModifyEmailDto,
   ) {
@@ -222,10 +251,10 @@ export class GmailController {
   @Get('attachments/:messageId/:attachmentId')
   @ApiGetAttachment()
   async getAttachment(
-    @Req() req: any,
+    @Req() req: Request & { user: { sub: string } },
     @Param('messageId') messageId: string,
     @Param('attachmentId') attachmentId: string,
-    @Res({ passthrough: true }) res: any,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const result = await this.getAttachmentUseCase.execute(
       req.user.sub,

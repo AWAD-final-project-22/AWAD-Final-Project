@@ -31,6 +31,7 @@ export class JwtAuthGuard implements CanActivate {
 
     const parts = authHeader.split(' ');
     const token = parts.length === 2 ? parts[1] : null; // Bearer <token>
+
     if (!token) throw new UnauthorizedException('Invalid Authorization header');
 
     try {

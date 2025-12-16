@@ -1,4 +1,5 @@
 import { BaseGmailUseCase } from './base-gmail.use-case';
+import { GmailMessage, GmailHeader, GmailMessagePart } from '../../ports/gmail.port';
 
 export class GetEmailDetailUseCase extends BaseGmailUseCase {
   async execute(userId: string, messageId: string) {
@@ -13,10 +14,10 @@ export class GetEmailDetailUseCase extends BaseGmailUseCase {
     return this.mapToEmailDetail(message);
   }
 
-  private mapToEmailDetail(msg: any) {
+  private mapToEmailDetail(msg: GmailMessage) {
     const headers = msg.payload?.headers || [];
     const getHeader = (name: string) =>
-      headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())
+      headers.find((h: GmailHeader) => h.name.toLowerCase() === name.toLowerCase())
         ?.value || '';
 
     // Parse body content

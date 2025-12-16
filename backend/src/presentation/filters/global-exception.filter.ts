@@ -9,6 +9,12 @@ import { Response } from 'express';
 import { InvalidCredentialsError } from '../../application/errors/invalid-credentials.error';
 import { EmailAlreadyExistsError } from '../../application/errors/email-already-exists.error';
 
+interface HttpExceptionResponse {
+  message: string | string[];
+  error?: string;
+  statusCode?: number;
+}
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
@@ -33,7 +39,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
-      const res: any = exception.getResponse();
+      const res = exception.getResponse() as HttpExceptionResponse;
       const message = res.message || exception.message;
 
       return response.status(status).json({

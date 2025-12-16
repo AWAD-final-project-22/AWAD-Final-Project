@@ -1,4 +1,4 @@
-import { IGmailService, SendMessageParams, EmailAttachment } from '../../ports/gmail.port';
+import { IGmailService, SendMessageParams, EmailAttachment, GmailHeader } from '../../ports/gmail.port';
 import { BaseGmailUseCase } from './base-gmail.use-case';
 
 export interface ReplyEmailParams {
@@ -22,7 +22,7 @@ export class ReplyEmailUseCase extends BaseGmailUseCase {
 
     const headers = originalMessage.payload?.headers || [];
     const getHeader = (name: string) =>
-      headers.find((h: any) => h.name.toLowerCase() === name.toLowerCase())
+      headers.find((h: GmailHeader) => h.name.toLowerCase() === name.toLowerCase())
         ?.value || '';
 
     const originalFrom = getHeader('From');

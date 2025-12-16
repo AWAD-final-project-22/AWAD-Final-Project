@@ -97,7 +97,12 @@ export class GmailServiceImpl implements IGmailService {
       .replace(/\//g, '_')
       .replace(/=+$/, '');
 
-    const requestBody: any = {
+    interface SendMessageRequestBody {
+      raw: string;
+      threadId?: string;
+    }
+
+    const requestBody: SendMessageRequestBody = {
       raw: encodedMessage,
     };
 

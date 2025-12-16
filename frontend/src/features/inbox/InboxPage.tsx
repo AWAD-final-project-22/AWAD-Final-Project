@@ -4,6 +4,7 @@ import { useWindowSize } from '@/hooks/useWindowSize';
 import { breakpoints } from '@/themes/breakpoint';
 import { Layout } from 'antd';
 import React, { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ComposeEmailModal } from './components/ComposeEmailModal';
 import { EmailDetailPanel } from './components/EmailDetailPanel';
 import { EmailListPanel } from './components/EmailListPanel';
@@ -11,11 +12,15 @@ import { MobileHeaderBar } from './components/MobileHeaderBar';
 import { Sidebar } from './components/SideBar';
 import { useInbox } from './hooks/useInbox';
 import { DivEmail, StyledLayout } from './styles/InboxPage.style';
+import { PARAMS_URL } from '@/constants/params.constant';
 
 const InboxPage: React.FC = () => {
   const windowSize = useWindowSize();
   const isMobile = windowSize.width <= parseInt(breakpoints.xl);
   const [openComposeModal, setOpenComposeModal] = useState(false);
+  const searchParams = useSearchParams();
+  const emailIdFromUrl = searchParams.get(PARAMS_URL.EMAIL_ID);
+
   const {
     mailboxes,
     checkedEmails,
@@ -43,7 +48,7 @@ const InboxPage: React.FC = () => {
     handleDownloadAttachment,
     handlePageChange,
     emails,
-  } = useInbox({ isMobile });
+  } = useInbox({ isMobile, mailID: emailIdFromUrl || undefined });
 
   return (
     <>
