@@ -21,7 +21,6 @@ import { GmailTokenService } from './services/gmail-token.service';
 
 @Module({
   imports: [
-    // Configure JWT Module properly with ConfigService
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -77,7 +76,7 @@ import { GmailTokenService } from './services/gmail-token.service';
     GmailTokenService,
     EmailProcessorService,
     InboxWorkflowService,
-    JwtModule, // Export JwtModule so PresentationModule can use it (via AuthGuard)
-  ],
+    JwtModule, 
+  ]
 })
 export class InfrastructureModule {}
