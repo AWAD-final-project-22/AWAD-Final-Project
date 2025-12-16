@@ -1,6 +1,7 @@
 'use client';
 import { Button, Checkbox, Pagination, Tooltip, Typography } from 'antd';
 import { IEmail, IEmailResponse } from '../interfaces/mailAPI.interface';
+import { UrgencyBadge } from './UrgencyBadge';
 import {
   DivEmailList,
   EmailItem,
@@ -22,6 +23,7 @@ import {
 import { formatDate } from '@/helpers/day.helper';
 import { EmptyState } from '@/components/EmptyState';
 import { LoadingSpin } from '@/components/LoadingSpin';
+import { ViewToggle } from '@/components/ViewToggle';
 const { Text } = Typography;
 
 interface EmailListPanelProps {
@@ -127,17 +129,30 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '8px',
                     }}
                   >
-                    <div>
-                      <Text strong={!email.isRead} style={{ marginRight: 8 }}>
-                        {email.subject}
-                      </Text>
-                      <Text type='secondary'>
-                        {email.preview.length > 50
-                          ? `${email.preview.substring(0, 50)}...`
-                          : email.preview}
-                      </Text>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ marginBottom: '4px' }}>
+                        <Text strong={!email.isRead} style={{ marginRight: 8 }}>
+                          {email.subject}
+                        </Text>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {email.urgencyScore !== undefined && (
+                          <UrgencyBadge urgencyScore={email.urgencyScore} showLabel={false} />
+                        )}
+                        <Text type='secondary'>
+                          {email.aiSummary
+                            ? email.aiSummary.length > 80
+                              ? `✨ ${email.aiSummary.substring(0, 80)}...`
+                              : `✨ ${email.aiSummary}`
+                            : email.preview.length > 80
+                            ? `${email.preview.substring(0, 80)}...`
+                            : email.preview}
+                        </Text>
+                      </div>
                     </div>
                     {email.hasAttachment && (
                       <PaperClipOutlined style={{ color: '#8c8c8c' }} />
@@ -187,6 +202,7 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
           <Button type='text' icon={<MailOutlined />} />
         </Tooltip>
         <div style={{ flex: 1 }} />
+        <ViewToggle currentView='list' />
       </Toolbar>
       {renderEmailList()}
     </EmailList>

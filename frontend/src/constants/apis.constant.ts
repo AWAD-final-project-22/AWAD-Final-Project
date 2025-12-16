@@ -59,4 +59,18 @@ export const API_PATH = {
       API_KEY: "attachmentDownload",
     },
   },
+  WORKFLOW: {
+    GET_WORKFLOWS: {
+      API_PATH: "/workflows",
+      API_KEY: "getWorkflows",
+    },
+    UPDATE_STATUS: {
+      API_PATH: (id: string) => `/workflows/${id}/status`,
+      API_KEY: "updateWorkflowStatus",
+    },
+    UPDATE_SNOOZE: {
+      API_PATH: (id: string) => `/workflows/${id}/snooze`,
+      API_KEY: "updateWorkflowSnooze",
+    },
+  },
 };
