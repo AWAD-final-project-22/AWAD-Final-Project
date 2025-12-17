@@ -18,5 +18,16 @@ export interface IEmailWorkflowRepository {
   updateSnooze(id: string, snoozedUntil: Date): Promise<EmailWorkflowEntity>;
   updateAiSummary(id: string, summary: string, urgencyScore?: number): Promise<EmailWorkflowEntity>;
   syncFromGmail(userId: string, gmailEmails: any[]): Promise<void>;
+
+
+  // New methods for full-text search
+  searchEmails(
+    userId: string, 
+    query: string, 
+    limit: number, 
+    offset: number
+  ): Promise<EmailWorkflowEntity[]>;
+  
+  countSearchResults(userId: string, query: string): Promise<number>;
 }
 

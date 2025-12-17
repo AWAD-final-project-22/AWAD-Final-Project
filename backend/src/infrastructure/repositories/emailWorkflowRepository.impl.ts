@@ -20,7 +20,6 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
   }
 
   async create(data: Partial<EmailWorkflowEntity>): Promise<EmailWorkflowEntity> {
-    // Check if workflow already exists for this userId + gmailMessageId
     const existing = await this.findByGmailMessageId(data.userId!, data.gmailMessageId!);
     if (existing) {
       return existing;
@@ -33,6 +32,7 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
         from: data.from!,
         date: data.date!,
         snippet: data.snippet,
+        hasAttachment: data.hasAttachment || false,
         status: data.status || WorkflowStatus.INBOX,
         priority: data.priority || 0,
         deadline: data.deadline,
@@ -207,5 +207,66 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
     return this.prisma.emailWorkflow.count({
       where: { userId, status },
     });
+  }
+
+  async searchEmails(userId: string, query: string, limit: number, offset: number): Promise<EmailWorkflowEntity[]> {
+    console.log(`[Search] Fuzzy searching for: "${query}"`);
+    
+    const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0);
+    
+    if (searchTerms.length === 0) {
+      return [];
+    }
+
+    const orConditions = searchTerms.flatMap(term => [
+      { subject: { contains: term, mode: 'insensitive' } },
+      { from: { contains: term, mode: 'insensitive' } },
+      { snippet: { contains: term, mode: 'insensitive' } },
+      { aiSummary: { contains: term, mode: 'insensitive' } }
+    ]);
+
+    const workflows = await this.prisma.emailWorkflow.findMany({
+      where: {
+        userId,
+        OR: orConditions as any
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { urgencyScore: 'desc' },
+        { date: 'desc' },
+      ],
+      take: limit,
+      skip: offset,
+    });
+    
+    console.log(`[Search] Found ${workflows.length} results`);
+    return workflows.map((w) => this.toEntity(w));
+  }
+
+  async countSearchResults(userId: string, query: string): Promise<number> {
+    console.log(`[Search Count] Fuzzy counting results for: "${query}"`);
+
+    const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0);
+    
+    if (searchTerms.length === 0) {
+      return 0;
+    }
+
+    const orConditions = searchTerms.flatMap(term => [
+      { subject: { contains: term, mode: 'insensitive' } },
+      { from: { contains: term, mode: 'insensitive' } },
+      { snippet: { contains: term, mode: 'insensitive' } },
+      { aiSummary: { contains: term, mode: 'insensitive' } }
+    ]);
+
+    const count = await this.prisma.emailWorkflow.count({
+      where: {
+        userId,
+        OR: orConditions as any
+      }
+    });
+    
+    console.log(`[Search Count] Found ${count} total results`);
+    return count;
   }
 }

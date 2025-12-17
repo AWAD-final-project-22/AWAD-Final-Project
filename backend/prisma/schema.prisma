@@ -32,6 +32,7 @@ model EmailWorkflow {
   from           String
   date           DateTime
   snippet        String?        @db.Text
+  hasAttachment  Boolean        @default(false)
   
   status         WorkflowStatus @default(INBOX)
   priority       Int            @default(0) 
@@ -48,6 +49,10 @@ model EmailWorkflow {
   @@index([userId, status])
   @@index([userId, snoozedUntil])
   @@index([userId, deadline])
+
+  @@index([userId, subject])
+  @@index([userId, from])
+  
   @@map("email_workflows")
 }
 
