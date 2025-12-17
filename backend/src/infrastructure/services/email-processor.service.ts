@@ -57,6 +57,8 @@ export class EmailProcessorService {
       }
     }
 
+    const hasAttachment = this.hasAttachment(fullEmail.payload);
+
     this.logger.log(`[Email ${gmailMessageId}] Calling AI summarize`);
     const { summary, urgencyScore } = await this.aiSummaryPort.summarizeEmail(
       body || fullEmail.snippet || '',
@@ -70,6 +72,7 @@ export class EmailProcessorService {
       from,
       date: new Date(date || Date.now()),
       snippet: fullEmail.snippet || '',
+      hasAttachment: hasAttachment,
       status: WorkflowStatus.INBOX,
       priority: 0,
       aiSummary: summary,
@@ -147,6 +150,9 @@ export class EmailProcessorService {
               body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
             }
           }
+
+          const hasAttachment = this.hasAttachment(fullEmail.payload);
+
           const aiResult = aiResults[messageId] || { summary: 'AI summarization failed', urgencyScore: 0.5 };
           const newWorkflow = await this.workflowRepository.create({
             userId,
@@ -155,6 +161,7 @@ export class EmailProcessorService {
             from,
             date: new Date(date || Date.now()),
             snippet: fullEmail.snippet || '',
+            hasAttachment: hasAttachment,
             status: WorkflowStatus.INBOX,
             priority: 0,
             aiSummary: aiResult.summary,
@@ -168,5 +175,23 @@ export class EmailProcessorService {
       }
     }
     return results;
+  }
+
+  private hasAttachment(payload: any): boolean {
+    if (!payload?.parts) return false;
+    
+    const checkParts = (parts: any[]): boolean => {
+      for (const part of parts) {
+        if (part.filename && part.filename.trim() !== '') {
+          return true;
+        }
+        if (part.parts && checkParts(part.parts)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    
+    return checkParts(payload.parts);
   }
 }

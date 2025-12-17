@@ -23,10 +23,7 @@ export interface GmailMessage {
   payload?: {
     headers: { name: string; value: string }[];
     body?: { data?: string };
-    parts?: Array<{
-      mimeType: string;
-      body?: { data?: string };
-    }>;
+    parts?: GmailMessagePart[];
   };
   internalDate: string;
   labelIds: string[];

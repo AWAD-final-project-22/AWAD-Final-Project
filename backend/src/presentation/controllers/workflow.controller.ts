@@ -18,6 +18,8 @@ import { WorkflowStatus } from '@prisma/client';
 import { EmailWorkflowEntity } from '../../domain/entities/emaiWorkflow.entity';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ApiGetWorkflowsDocs, ApiUpdateWorkflowStatusDocs } from '../decorators/swagger/workflow.swagger.decorator';
+import { ApiSearchWorkflowsDocs } from '../decorators/swagger/search-workflow.swagger.decorator';
+import { SearchWorkflowsUseCase } from '../../application/use-cases/workflow/search-workflow.use-case';
 
 @ApiTags('Workflows')
 @ApiBearerAuth('JWT-auth')
@@ -28,8 +30,9 @@ export class WorkflowController {
 
   constructor(
     private readonly getWorkflowsUseCase: GetWorkflowsUseCase,
+    private readonly searchWorkflowsUseCase: SearchWorkflowsUseCase,
   ) {}
-
+  
   @Get()
   @ApiGetWorkflowsDocs()
   async getWorkflows(
@@ -66,5 +69,46 @@ export class WorkflowController {
     this.logger.log(`PATCH /workflows/${id}/status - User: ${userId}, New status: ${status}`);
     const updated = await this.getWorkflowsUseCase.updateWorkflowStatus(userId, id, status);
     return { success: true, data: updated };
+  }
+
+  @Get('search')
+  @ApiSearchWorkflowsDocs()
+  async searchWorkflows(
+    @Req() req: any,
+    @Query('query') query: string,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset = 0,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
+  ){
+    const userId = req.user.userId;
+    this.logger.log(`GET /workflows/search - User: ${userId}, Query: ${query}`);
+
+    if (!query || query.trim() === '') {
+      return {
+        success: false,
+        message: 'Query parameter is required',
+      }
+    }
+
+    const safeLimit = Math.max(1, Math.min(limit, 100));
+    const safeOffset = Math.max(0, offset);
+
+    const finalOffset = page > 1 ? (page - 1) * safeLimit : safeOffset;
+
+    const result = await this.searchWorkflowsUseCase.execute({
+      userId,
+      query: query.trim(),
+      limit: safeLimit,
+      offset: finalOffset,
+    });
+
+    return {
+      success: true,
+      data: result.data,
+      pagination: {
+        ...result.pagination,
+        currentPage: page,
+      },
+    }
   }
 }
