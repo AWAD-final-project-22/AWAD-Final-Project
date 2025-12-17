@@ -12,6 +12,7 @@ import { LoadingSpin } from '@/components/LoadingSpin';
 import { EmptyState } from '@/components/EmptyState';
 import { SnoozeModal } from './components/SnoozeModal';
 import { KanbanColumn } from './components/KanbanColumn';
+import { FilterBar } from './components/FilterBar';
 import {
     KanbanLayout,
     KanbanHeader,
@@ -44,6 +45,11 @@ const KanbanPage: React.FC = () => {
         snoozeModalOpen,
         selectedEmailForSnooze,
         refetch,
+        filters,
+        sortBy,
+        handleFilterChange,
+        handleSortChange,
+        handleClearFilters,
     } = useKanban();
 
     const handleSnoozeConfirm = (snoozedUntil: Date) => {
@@ -90,6 +96,15 @@ const KanbanPage: React.FC = () => {
                         <ViewToggle currentView="kanban" />
                     </HeaderActions>
                 </KanbanHeader>
+
+                <FilterBar
+                    filters={filters}
+                    sortBy={sortBy}
+                    onFilterChange={handleFilterChange}
+                    onSortChange={handleSortChange}
+                    onClearFilters={handleClearFilters}
+                />
+
                 <Layout.Content>
                     <EmptyState message="No emails to display" />
                 </Layout.Content>
@@ -124,6 +139,14 @@ const KanbanPage: React.FC = () => {
                     <ViewToggle currentView="kanban" />
                 </HeaderActions>
             </KanbanHeader>
+
+            <FilterBar
+                filters={filters}
+                sortBy={sortBy}
+                onFilterChange={handleFilterChange}
+                onSortChange={handleSortChange}
+                onClearFilters={handleClearFilters}
+            />
 
             <Layout.Content>
                 <DragDropContext onDragEnd={handleDragEnd}>
