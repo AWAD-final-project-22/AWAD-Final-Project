@@ -60,7 +60,9 @@ See [Environment Variables](#environment-variables) for details.
 ### 4. Run Database Migrations (Prisma)
 
 ```bash
+npx prisma generate
 npx prisma migrate dev
+
 ```
 
 ### 5. Run the Application
