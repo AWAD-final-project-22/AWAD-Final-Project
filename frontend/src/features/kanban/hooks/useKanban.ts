@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { App } from 'antd';
 import { DropResult } from '@hello-pangea/dnd';
 import { useGetEmailsByMailBoxId } from '@/features/inbox/hooks/mailAPIs';
@@ -8,6 +8,8 @@ import { IEmail } from '@/features/inbox/interfaces/mailAPI.interface';
 import {
     IKanbanEmail,
     KanbanStatus,
+    IFilterOptions,
+    SortType,
 } from '../interfaces/kanban.interface';
 import {
     KANBAN_COLUMN_ORDER,
@@ -33,10 +35,50 @@ const mapWorkflowToKanbanStatus = (status: WorkflowStatus): KanbanStatus => {
     return status as unknown as KanbanStatus;
 };
 
+const STORAGE_KEY_FILTERS = 'kanban_filters';
+const STORAGE_KEY_SORT = 'kanban_sort';
+
+const getInitialFilters = (): IFilterOptions => {
+    if (typeof window === 'undefined') {
+        return { showUnreadOnly: false, showAttachmentsOnly: false, senderFilter: null };
+    }
+    const saved = localStorage.getItem(STORAGE_KEY_FILTERS);
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch {
+            return { showUnreadOnly: false, showAttachmentsOnly: false, senderFilter: null };
+        }
+    }
+    return { showUnreadOnly: false, showAttachmentsOnly: false, senderFilter: null };
+};
+
+const getInitialSort = (): SortType => {
+    if (typeof window === 'undefined') return 'date-newest';
+    const saved = localStorage.getItem(STORAGE_KEY_SORT);
+    return (saved as SortType) || 'date-newest';
+};
+
 export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
     const { notification } = App.useApp();
     const [snoozeModalOpen, setSnoozeModalOpen] = useState(false);
     const [selectedEmailForSnooze, setSelectedEmailForSnooze] = useState<string | null>(null);
+    const [filters, setFilters] = useState<IFilterOptions>(getInitialFilters);
+    const [sortBy, setSortBy] = useState<SortType>(getInitialSort);
+
+    // Persist filters to localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filters));
+        }
+    }, [filters]);
+
+    // Persist sort to localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY_SORT, sortBy);
+        }
+    }, [sortBy]);
 
     const { data: emailsData, isLoading: isEmailsLoading, refetch: refetchEmails } = useGetEmailsByMailBoxId(
         { page: 1, limit: Number(LIMIT_DEFAULT) * 5 },
@@ -147,6 +189,82 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
 
         return result;
     }, [inboxWorkflows, todoWorkflows, doneWorkflows, snoozedWorkflows, transformWorkflowToKanbanEmail]);
+
+    // Filter emails based on filter options
+    const filterEmails = useCallback((emails: IKanbanEmail[]): IKanbanEmail[] => {
+        let filtered = [...emails];
+
+        // Filter by unread
+        if (filters.showUnreadOnly) {
+            filtered = filtered.filter(email => email.isRead === false);
+        }
+
+        // Filter by attachments
+        if (filters.showAttachmentsOnly) {
+            filtered = filtered.filter(email => email.hasAttachment === true);
+        }
+
+        // Filter by sender
+        if (filters.senderFilter) {
+            const searchTerm = filters.senderFilter.toLowerCase();
+            filtered = filtered.filter(email => 
+                email.sender.toLowerCase().includes(searchTerm)
+            );
+        }
+
+        return filtered;
+    }, [filters]);
+
+    // Sort emails based on sort option
+    const sortEmails = useCallback((emails: IKanbanEmail[]): IKanbanEmail[] => {
+        const sorted = [...emails];
+
+        switch (sortBy) {
+            case 'date-newest':
+                return sorted.sort((a, b) => 
+                    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+                );
+            case 'date-oldest':
+                return sorted.sort((a, b) => 
+                    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                );
+            case 'sender-asc':
+                return sorted.sort((a, b) => {
+                    const senderA = a.sender.split('<')[0].trim().toLowerCase();
+                    const senderB = b.sender.split('<')[0].trim().toLowerCase();
+                    return senderA.localeCompare(senderB);
+                });
+            case 'sender-desc':
+                return sorted.sort((a, b) => {
+                    const senderA = a.sender.split('<')[0].trim().toLowerCase();
+                    const senderB = b.sender.split('<')[0].trim().toLowerCase();
+                    return senderB.localeCompare(senderA);
+                });
+            default:
+                return sorted;
+        }
+    }, [sortBy]);
+
+    // Apply filters and sort to grouped emails
+    const processedEmails = useMemo(() => {
+        const result: Record<KanbanStatus, IKanbanEmail[]> = {
+            INBOX: [],
+            TODO: [],
+            IN_PROGRESS: [],
+            DONE: [],
+            SNOOZED: [],
+        };
+
+        // Process each status separately
+        (Object.keys(groupedEmails) as KanbanStatus[]).forEach(status => {
+            const emails = groupedEmails[status] || [];
+            const filtered = filterEmails(emails);
+            const sorted = sortEmails(filtered);
+            result[status] = sorted;
+        });
+
+        return result;
+    }, [groupedEmails, filterEmails, sortEmails]);
 
     // Handle drag and drop
     const handleDragEnd = useCallback(
@@ -282,19 +400,32 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
         setSelectedEmailForSnooze(null);
     }, []);
 
-    // Get columns to display
+    // Get columns to display with filtered and sorted emails
     const columns = useMemo(() => {
         return KANBAN_COLUMN_ORDER.map((status) => ({
             id: status,
             title: status.replace('_', ' '),
-            emails: groupedEmails[status] || [],
+            emails: processedEmails[status] || [],
         }));
-    }, [groupedEmails]);
+    }, [processedEmails]);
 
-    // Snoozed emails for separate display
+    // Snoozed emails for separate display with filters and sort
     const snoozedEmails = useMemo(() => {
-        return groupedEmails[SNOOZED_COLUMN_ID] || [];
-    }, [groupedEmails]);
+        return processedEmails[SNOOZED_COLUMN_ID] || [];
+    }, [processedEmails]);
+
+    // Filter handlers
+    const handleFilterChange = useCallback((newFilters: IFilterOptions) => {
+        setFilters(newFilters);
+    }, []);
+
+    const handleSortChange = useCallback((newSort: SortType) => {
+        setSortBy(newSort);
+    }, []);
+
+    const handleClearFilters = useCallback(() => {
+        setFilters({ showUnreadOnly: false, showAttachmentsOnly: false, senderFilter: null });
+    }, []);
 
     return {
         columns,
@@ -308,5 +439,10 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
         snoozeModalOpen,
         selectedEmailForSnooze,
         refetch: refetchAllWorkflows,
+        filters,
+        sortBy,
+        handleFilterChange,
+        handleSortChange,
+        handleClearFilters,
     };
 };

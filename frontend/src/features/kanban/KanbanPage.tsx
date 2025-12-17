@@ -31,7 +31,6 @@ const HeaderActions = styled.div`
 `;
 
 const KanbanPage: React.FC = () => {
-  // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchPage, setSearchPage] = useState(1);
 
@@ -80,7 +79,6 @@ const KanbanPage: React.FC = () => {
     }
   };
 
-  // Render search input component (reused in multiple places)
   const renderSearchInput = () => (
     <SearchInput>
       <Search
