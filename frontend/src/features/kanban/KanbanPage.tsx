@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Button, Input, Tooltip, Layout } from 'antd';
+import { Button, Tooltip, Layout } from 'antd';
 import { ReloadOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { useKanban } from './hooks/useKanban';
 import { ViewToggle } from '@/components/ViewToggle';
@@ -21,8 +21,8 @@ import { DragDropContext } from '@hello-pangea/dnd';
 import styled from 'styled-components';
 import { useSearchWorkflows } from '@/features/search/hooks/useSearch';
 import { SearchResultsView } from '@/features/search/components/SearchResultsView';
+import { SearchWithSuggestions } from '@/features/search/components/SearchWithSuggestions';
 
-const { Search } = Input;
 
 const HeaderActions = styled.div`
   display: flex;
@@ -81,13 +81,14 @@ const KanbanPage: React.FC = () => {
 
   const renderSearchInput = () => (
     <SearchInput>
-      <Search
+      <SearchWithSuggestions
         placeholder='Search emails...'
         onSearch={handleSearch}
-        allowClear
-        onChange={(e) => {
-          if (e.target.value === '') handleClearSearch();
+        onChange={(value) => {
+          if (value === '') handleClearSearch();
         }}
+        onClear={handleClearSearch}
+        allowClear
         style={{ width: '100%' }}
       />
     </SearchInput>

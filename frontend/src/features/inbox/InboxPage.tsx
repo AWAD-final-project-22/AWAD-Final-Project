@@ -47,6 +47,7 @@ const InboxPage: React.FC = () => {
     isReplyEmailPending,
     handleDownloadAttachment,
     handlePageChange,
+    handleSearch,
     emails,
   } = useInbox({ isMobile, mailID: emailIdFromUrl || undefined });
 
@@ -63,6 +64,7 @@ const InboxPage: React.FC = () => {
           searchText={searchText}
           setSearchText={setSearchText}
           setOpenComposeModal={setOpenComposeModal}
+          handleSearch={handleSearch}
         />
 
         <Layout>

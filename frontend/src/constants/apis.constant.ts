@@ -68,6 +68,10 @@ export const API_PATH = {
       API_PATH: '/workflows/search',
       API_KEY: 'searchWorkflows',
     },
+    SUGGESTIONS: {
+      API_PATH: '/workflows/search/suggestions',
+      API_KEY: 'searchSuggestions',
+    },
     UPDATE_STATUS: {
       API_PATH: (id: string) => `/workflows/${id}/status`,
       API_KEY: 'updateWorkflowStatus',

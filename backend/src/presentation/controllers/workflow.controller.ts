@@ -20,6 +20,9 @@ import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ApiGetWorkflowsDocs, ApiUpdateWorkflowStatusDocs } from '../decorators/swagger/workflow.swagger.decorator';
 import { ApiSearchWorkflowsDocs } from '../decorators/swagger/search-workflow.swagger.decorator';
 import { SearchWorkflowsUseCase } from '../../application/use-cases/workflow/search-workflow.use-case';
+import { GetSuggestionsUseCase } from '../../application/use-cases/workflow/get-suggestions.use-case';
+import { GetSuggestionsDto } from '../dtos/request/get-suggestions.dto';
+import { GetSuggestionsResponseDto, SuggestionItemDto } from '../dtos/response/suggestion.response.dto';
 
 @ApiTags('Workflows')
 @ApiBearerAuth('JWT-auth')
@@ -31,6 +34,7 @@ export class WorkflowController {
   constructor(
     private readonly getWorkflowsUseCase: GetWorkflowsUseCase,
     private readonly searchWorkflowsUseCase: SearchWorkflowsUseCase,
+    private readonly getSuggestionsUseCase: GetSuggestionsUseCase,
   ) {}
   
   @Get()
@@ -110,5 +114,25 @@ export class WorkflowController {
         currentPage: page,
       },
     }
+  }
+
+  @Get('search/suggestions')
+  async getSuggestions(
+    @Req() req: { user: { userId: string } },
+    @Query() dto: GetSuggestionsDto,
+  ): Promise<GetSuggestionsResponseDto> {
+    const userId = req.user.userId;
+    this.logger.log(`GET /workflows/search/suggestions - User: ${userId}, Query: ${dto.q}`);
+
+    const suggestions = await this.getSuggestionsUseCase.execute({
+      userId,
+      query: dto.q,
+      limit: dto.limit || 5,
+    });
+
+    return {
+      success: true,
+      suggestions,
+    };
   }
 }
