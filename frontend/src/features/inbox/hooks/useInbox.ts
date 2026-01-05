@@ -42,6 +42,12 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const [showEmailDetail, setShowEmailDetail] = useState(false);
 
   const pPage = searchParams.get(PARAMS_URL.PAGE) || PAGE_DEFAULT;
+  const pSearchQuery = searchParams.get(PARAMS_URL.SEARCH_QUERY) || '';
+
+  // Sync searchText with URL query param
+  useEffect(() => {
+    setSearchText(pSearchQuery);
+  }, [pSearchQuery]);
 
   const { data: mailboxes, isLoading: isMailboxesLoading } = useGetMailBoxes();
 
@@ -218,6 +224,10 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     updateSearchQuery({ [PARAMS_URL.PAGE]: value }, true);
   };
 
+  const handleSearch = (query: string) => {
+    updateSearchQuery({ [PARAMS_URL.SEARCH_QUERY]: query });
+  };
+
   // Show email detail when mailID is provided from URL (for Kanban navigation)
   useEffect(() => {
     if (mailID) {
@@ -279,5 +289,6 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     selectedEmailData,
 
     handlePageChange,
+    handleSearch,
   };
 };

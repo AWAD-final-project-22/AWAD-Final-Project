@@ -9,12 +9,12 @@ import {
   SendOutlined,
   StarOutlined,
 } from '@ant-design/icons';
-import { Button, Drawer, Input, Menu } from 'antd';
+import { Button, Drawer, Menu } from 'antd';
 import React from 'react';
 import { IMailbox } from '../interfaces/mailAPI.interface';
 import { DesktopSider, SidebarContent } from '../styles/InboxPage.style';
+import { SearchWithSuggestions } from '@/features/search/components/SearchWithSuggestions';
 
-const { Search } = Input;
 
 interface SidebarProps {
   collapsed: boolean;
@@ -26,6 +26,7 @@ interface SidebarProps {
   searchText: string;
   setSearchText: (value: string) => void;
   setOpenComposeModal?: (value: boolean) => void;
+  handleSearch?: (query: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -38,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   searchText,
   setSearchText,
   setOpenComposeModal,
+  handleSearch,
 }) => {
   const items = mailboxes?.map((mailbox) => {
     let icon: React.ReactNode;
@@ -79,11 +81,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           {(!collapsed || isMobile) && 'Compose'}
         </Button>
-        <Search
-          placeholder='Search...'
-          onSearch={setSearchText}
+        <SearchWithSuggestions
+          placeholder='Search emails...'
+          onSearch={handleSearch || setSearchText}
           value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
+          onChange={setSearchText}
+          onClear={() => setSearchText('')}
           style={{ marginBottom: '16px' }}
           allowClear
         />
