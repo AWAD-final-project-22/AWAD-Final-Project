@@ -47,14 +47,18 @@ export class GetWorkflowsUseCase {
       };
     }
 
-    const workflows = await this.workflowRepository.findByUserAndStatusWithPagination(
+    const workflows =
+      await this.workflowRepository.findByUserAndStatusWithPagination(
+        userId,
+        status,
+        limit,
+        offset,
+      );
+
+    const total = await this.workflowRepository.countByUserAndStatus(
       userId,
       status,
-      limit,
-      offset,
     );
-
-    const total = await this.workflowRepository.countByUserAndStatus(userId, status);
 
     return {
       data: workflows,
@@ -72,11 +76,77 @@ export class GetWorkflowsUseCase {
     id: string,
     status: WorkflowStatus,
   ): Promise<EmailWorkflowEntity> {
-    // Kiểm tra quyền sở hữu trước khi update
     const workflow = await this.workflowRepository.findById(id);
     if (!workflow) throw new Error('Workflow not found');
-    if (workflow.userId !== userId) throw new Error('Forbidden: You do not own this workflow');
+    if (workflow.userId !== userId)
+      throw new Error('Forbidden: You do not own this workflow');
     const updated = await this.workflowRepository.updateStatus(id, status);
     return updated;
+  }
+
+  async updateSnooze(
+    userId: string,
+    id: string,
+    snoozedUntil: Date,
+  ): Promise<EmailWorkflowEntity> {
+    const workflow = await this.workflowRepository.findById(id);
+    if (!workflow) throw new Error('Workflow not found');
+    if (workflow.userId !== userId)
+      throw new Error('Forbidden: You do not own this workflow');
+    const updated = await this.workflowRepository.updateSnooze(
+      id,
+      snoozedUntil,
+    );
+    return updated;
+  }
+
+  async findByEmailId(
+    userId: string,
+    emailId: string,
+  ): Promise<EmailWorkflowEntity | null> {
+    return this.workflowRepository.findByGmailMessageId(userId, emailId);
+  }
+
+  async createOrUpdateWorkflow(
+    userId: string,
+    emailData: {
+      emailId: string;
+      subject: string;
+      from: string;
+      date: Date;
+      snippet?: string;
+    },
+    status: WorkflowStatus,
+  ): Promise<EmailWorkflowEntity> {
+    const existing = await this.workflowRepository.findByGmailMessageId(
+      userId,
+      emailData.emailId,
+    );
+
+    if (existing) {
+      return this.workflowRepository.updateStatus(existing.id, status);
+    }
+
+    return this.workflowRepository.create({
+      userId,
+      gmailMessageId: emailData.emailId,
+      subject: emailData.subject,
+      from: emailData.from,
+      date: emailData.date,
+      snippet: emailData.snippet,
+      status,
+    });
+  }
+
+  async updatePriority(
+    userId: string,
+    id: string,
+    priority: number,
+  ): Promise<EmailWorkflowEntity> {
+    const workflow = await this.workflowRepository.findById(id);
+    if (!workflow) throw new Error('Workflow not found');
+    if (workflow.userId !== userId)
+      throw new Error('Forbidden: You do not own this workflow');
+    return this.workflowRepository.updatePriority(id, priority);
   }
 }

@@ -3,20 +3,17 @@ import { EmailAction } from '../../../domain/enums/email-action.enum';
 import { BaseGmailUseCase } from './base-gmail.use-case';
 
 export interface ModifyEmailParams {
-  action: EmailAction;
+  action?: EmailAction;
   addLabelIds?: string[];
   removeLabelIds?: string[];
 }
 
 export class ModifyEmailUseCase extends BaseGmailUseCase {
   async execute(userId: string, messageId: string, params: ModifyEmailParams) {
-    // 1. Lấy user và decrypt token
     const accessToken = await this.getAccessToken(userId);
 
-    // 2. Map action sang Gmail labels
     const modifyParams = this.mapActionToLabels(params);
 
-    // 3. Modify message
     const result = await this.gmailService.modifyMessage(
       accessToken,
       'me',
@@ -33,9 +30,13 @@ export class ModifyEmailUseCase extends BaseGmailUseCase {
 
   private mapActionToLabels(params: ModifyEmailParams): ModifyMessageParams {
     const result: ModifyMessageParams = {
-      addLabelIds: params.addLabelIds || [],
-      removeLabelIds: params.removeLabelIds || [],
+      addLabelIds: [...(params.addLabelIds || [])],
+      removeLabelIds: [...(params.removeLabelIds || [])],
     };
+
+    if (!params.action) {
+      return result;
+    }
 
     switch (params.action) {
       case EmailAction.MARK_READ:

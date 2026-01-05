@@ -81,4 +81,26 @@ export const API_PATH = {
       API_KEY: 'updateWorkflowSnooze',
     },
   },
+  KANBAN: {
+    GET_COLUMNS: {
+      API_PATH: '/kanban/columns',
+      API_KEY: 'getKanbanColumns',
+    },
+    CREATE_COLUMN: {
+      API_PATH: '/kanban/columns',
+      API_KEY: 'createKanbanColumn',
+    },
+    UPDATE_COLUMN: {
+      API_PATH: (id: string) => `/kanban/columns/${id}`,
+      API_KEY: 'updateKanbanColumn',
+    },
+    DELETE_COLUMN: {
+      API_PATH: (id: string) => `/kanban/columns/${id}`,
+      API_KEY: 'deleteKanbanColumn',
+    },
+    MOVE_CARD: {
+      API_PATH: (cardId: string) => `/kanban/cards/${cardId}/move`,
+      API_KEY: 'moveKanbanCard',
+    },
+  },
 };

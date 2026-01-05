@@ -1,19 +1,20 @@
-import { API_PATH } from "@/constants/apis.constant";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { API_PATH } from '@/constants/apis.constant';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   getEmailDetailById,
   getListEmailsByMailBoxId,
   getListMailBoxes,
   modifyEmailById,
+  modifyEmailLabels,
   replyEmailById,
   sendEmail,
   streamAttachmentById,
-} from "../services/mailQueries";
-import { UseMutationLoginOptions } from "@/interfaces/query";
+} from '../services/mailQueries';
+import { UseMutationLoginOptions } from '@/interfaces/query';
 import {
   IEmailParams,
   IReplyEmailParams,
-} from "../interfaces/mailAPI.interface";
+} from '../interfaces/mailAPI.interface';
 
 // Hook to get list of mail boxes
 export const useGetMailBoxes = () => {
@@ -84,10 +85,31 @@ export const useMutationModifyEmailById = ({
   });
 };
 
+// Modify email labels (add/remove)
+export const useMutationModifyEmailLabels = ({
+  onSuccess,
+  onError,
+}: UseMutationLoginOptions) => {
+  return useMutation({
+    mutationKey: [API_PATH.EMAIL.MODIFY_EMAIL.API_KEY, 'labels'],
+    mutationFn: ({
+      id,
+      addLabelIds,
+      removeLabelIds,
+    }: {
+      id: string;
+      addLabelIds?: string[];
+      removeLabelIds?: string[];
+    }) => modifyEmailLabels(id, addLabelIds, removeLabelIds),
+    onSuccess,
+    onError,
+  });
+};
+
 // Stream attachment
 export const useGetAttachmentById = (
   messageId: string,
-  attachmentId: string
+  attachmentId: string,
 ) => {
   return useQuery({
     queryKey: [

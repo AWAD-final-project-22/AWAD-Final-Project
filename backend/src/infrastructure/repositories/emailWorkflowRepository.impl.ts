@@ -1,7 +1,7 @@
 import { IEmailWorkflowRepository } from '../../domain/repositories/IEmailWorkFflowRepository';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import { EmailWorkflowEntity } from '../../domain/entities/emaiWorkflow.entity' 
+import { EmailWorkflowEntity } from '../../domain/entities/emaiWorkflow.entity';
 import { WorkflowStatus } from '@prisma/client';
 
 @Injectable()
@@ -19,8 +19,13 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
     });
   }
 
-  async create(data: Partial<EmailWorkflowEntity>): Promise<EmailWorkflowEntity> {
-    const existing = await this.findByGmailMessageId(data.userId!, data.gmailMessageId!);
+  async create(
+    data: Partial<EmailWorkflowEntity>,
+  ): Promise<EmailWorkflowEntity> {
+    const existing = await this.findByGmailMessageId(
+      data.userId!,
+      data.gmailMessageId!,
+    );
     if (existing) {
       return existing;
     }
@@ -78,7 +83,9 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
     return workflows.map((w) => this.toEntity(w));
   }
 
-  async findSnoozedEmailsDue(now: Date = new Date()): Promise<EmailWorkflowEntity[]> {
+  async findSnoozedEmailsDue(
+    now: Date = new Date(),
+  ): Promise<EmailWorkflowEntity[]> {
     const workflows = await this.prisma.emailWorkflow.findMany({
       where: {
         status: WorkflowStatus.SNOOZED,
@@ -90,7 +97,10 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
     return workflows.map((w) => this.toEntity(w));
   }
 
-  async updateStatus(id: string, status: WorkflowStatus): Promise<EmailWorkflowEntity> {
+  async updateStatus(
+    id: string,
+    status: WorkflowStatus,
+  ): Promise<EmailWorkflowEntity> {
     const workflow = await this.prisma.emailWorkflow.update({
       where: { id },
       data: {
@@ -104,7 +114,10 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
     return this.toEntity(workflow);
   }
 
-  async updateSnooze(id: string, snoozedUntil: Date): Promise<EmailWorkflowEntity> {
+  async updateSnooze(
+    id: string,
+    snoozedUntil: Date,
+  ): Promise<EmailWorkflowEntity> {
     const workflow = await this.prisma.emailWorkflow.update({
       where: { id },
       data: {
@@ -160,7 +173,10 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
     await this.prisma.$transaction(operations);
   }
 
-  async updateDeadline(id: string, deadline: Date): Promise<EmailWorkflowEntity> {
+  async updateDeadline(
+    id: string,
+    deadline: Date,
+  ): Promise<EmailWorkflowEntity> {
     const workflow = await this.prisma.emailWorkflow.update({
       where: { id },
       data: { deadline },
@@ -203,32 +219,43 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
     return workflows.map((w) => this.toEntity(w));
   }
 
-  async countByUserAndStatus(userId: string, status: WorkflowStatus): Promise<number> {
+  async countByUserAndStatus(
+    userId: string,
+    status: WorkflowStatus,
+  ): Promise<number> {
     return this.prisma.emailWorkflow.count({
       where: { userId, status },
     });
   }
 
-  async searchEmails(userId: string, query: string, limit: number, offset: number): Promise<EmailWorkflowEntity[]> {
+  async searchEmails(
+    userId: string,
+    query: string,
+    limit: number,
+    offset: number,
+  ): Promise<EmailWorkflowEntity[]> {
     console.log(`[Search] Fuzzy searching for: "${query}"`);
-    
-    const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0);
-    
+
+    const searchTerms = query
+      .trim()
+      .split(/\s+/)
+      .filter((term) => term.length > 0);
+
     if (searchTerms.length === 0) {
       return [];
     }
 
-    const orConditions = searchTerms.flatMap(term => [
+    const orConditions = searchTerms.flatMap((term) => [
       { subject: { contains: term, mode: 'insensitive' } },
       { from: { contains: term, mode: 'insensitive' } },
       { snippet: { contains: term, mode: 'insensitive' } },
-      { aiSummary: { contains: term, mode: 'insensitive' } }
+      { aiSummary: { contains: term, mode: 'insensitive' } },
     ]);
 
     const workflows = await this.prisma.emailWorkflow.findMany({
       where: {
         userId,
-        OR: orConditions as any
+        OR: orConditions as any,
       },
       orderBy: [
         { priority: 'desc' },
@@ -238,7 +265,7 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
       take: limit,
       skip: offset,
     });
-    
+
     console.log(`[Search] Found ${workflows.length} results`);
     return workflows.map((w) => this.toEntity(w));
   }
@@ -246,27 +273,44 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
   async countSearchResults(userId: string, query: string): Promise<number> {
     console.log(`[Search Count] Fuzzy counting results for: "${query}"`);
 
-    const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0);
-    
+    const searchTerms = query
+      .trim()
+      .split(/\s+/)
+      .filter((term) => term.length > 0);
+
     if (searchTerms.length === 0) {
       return 0;
     }
 
-    const orConditions = searchTerms.flatMap(term => [
+    const orConditions = searchTerms.flatMap((term) => [
       { subject: { contains: term, mode: 'insensitive' } },
       { from: { contains: term, mode: 'insensitive' } },
       { snippet: { contains: term, mode: 'insensitive' } },
-      { aiSummary: { contains: term, mode: 'insensitive' } }
+      { aiSummary: { contains: term, mode: 'insensitive' } },
     ]);
 
     const count = await this.prisma.emailWorkflow.count({
       where: {
         userId,
-        OR: orConditions as any
-      }
+        OR: orConditions as any,
+      },
     });
-    
+
     console.log(`[Search Count] Found ${count} total results`);
     return count;
+  }
+
+  async updatePriority(
+    id: string,
+    priority: number,
+  ): Promise<EmailWorkflowEntity> {
+    const workflow = await this.prisma.emailWorkflow.update({
+      where: { id },
+      data: {
+        priority,
+        updatedAt: new Date(),
+      },
+    });
+    return this.toEntity(workflow);
   }
 }

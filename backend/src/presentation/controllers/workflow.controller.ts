@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Query,
   Req,
   UseGuards,
@@ -17,7 +18,10 @@ import { GetWorkflowsUseCase } from '../../application/use-cases/workflow/get-wo
 import { WorkflowStatus } from '@prisma/client';
 import { EmailWorkflowEntity } from '../../domain/entities/emaiWorkflow.entity';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { ApiGetWorkflowsDocs, ApiUpdateWorkflowStatusDocs } from '../decorators/swagger/workflow.swagger.decorator';
+import {
+  ApiGetWorkflowsDocs,
+  ApiUpdateWorkflowStatusDocs,
+} from '../decorators/swagger/workflow.swagger.decorator';
 import { ApiSearchWorkflowsDocs } from '../decorators/swagger/search-workflow.swagger.decorator';
 import { SearchWorkflowsUseCase } from '../../application/use-cases/workflow/search-workflow.use-case';
 import { GetSuggestionsUseCase } from '../../application/use-cases/workflow/get-suggestions.use-case';
@@ -36,7 +40,7 @@ export class WorkflowController {
     private readonly searchWorkflowsUseCase: SearchWorkflowsUseCase,
     private readonly getSuggestionsUseCase: GetSuggestionsUseCase,
   ) {}
-  
+
   @Get()
   @ApiGetWorkflowsDocs()
   async getWorkflows(
@@ -70,8 +74,14 @@ export class WorkflowController {
     @Req() req: { user: { userId: string } },
   ): Promise<{ success: boolean; data: EmailWorkflowEntity }> {
     const userId = req.user.userId;
-    this.logger.log(`PATCH /workflows/${id}/status - User: ${userId}, New status: ${status}`);
-    const updated = await this.getWorkflowsUseCase.updateWorkflowStatus(userId, id, status);
+    this.logger.log(
+      `PATCH /workflows/${id}/status - User: ${userId}, New status: ${status}`,
+    );
+    const updated = await this.getWorkflowsUseCase.updateWorkflowStatus(
+      userId,
+      id,
+      status,
+    );
     return { success: true, data: updated };
   }
 
@@ -83,7 +93,7 @@ export class WorkflowController {
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset = 0,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
-  ){
+  ) {
     const userId = req.user.userId;
     this.logger.log(`GET /workflows/search - User: ${userId}, Query: ${query}`);
 
@@ -91,7 +101,7 @@ export class WorkflowController {
       return {
         success: false,
         message: 'Query parameter is required',
-      }
+      };
     }
 
     const safeLimit = Math.max(1, Math.min(limit, 100));
@@ -113,7 +123,84 @@ export class WorkflowController {
         ...result.pagination,
         currentPage: page,
       },
-    }
+    };
+  }
+
+  @Patch(':id/snooze')
+  async updateSnooze(
+    @Param('id') id: string,
+    @Body('snoozedUntil') snoozedUntil: string,
+    @Req() req: { user: { userId: string } },
+  ): Promise<{ success: boolean; data: EmailWorkflowEntity }> {
+    const userId = req.user.userId;
+    this.logger.log(`PATCH /workflows/${id}/snooze - User: ${userId}`);
+    const snoozedDate = new Date(snoozedUntil);
+    const updated = await this.getWorkflowsUseCase.updateSnooze(
+      userId,
+      id,
+      snoozedDate,
+    );
+    return { success: true, data: updated };
+  }
+
+  @Get('by-email/:emailId')
+  async findByEmailId(
+    @Param('emailId') emailId: string,
+    @Req() req: { user: { userId: string } },
+  ): Promise<{ success: boolean; data: EmailWorkflowEntity | null }> {
+    const userId = req.user.userId;
+    const workflow = await this.getWorkflowsUseCase.findByEmailId(
+      userId,
+      emailId,
+    );
+    return { success: true, data: workflow };
+  }
+
+  @Post()
+  async createOrUpdateWorkflow(
+    @Body()
+    body: {
+      emailId: string;
+      subject: string;
+      from: string;
+      date: string;
+      snippet?: string;
+      status: WorkflowStatus;
+    },
+    @Req() req: { user: { userId: string } },
+  ): Promise<{ success: boolean; data: EmailWorkflowEntity }> {
+    const userId = req.user.userId;
+    this.logger.log(
+      `POST /workflows - User: ${userId}, Email: ${body.emailId}`,
+    );
+    const workflow = await this.getWorkflowsUseCase.createOrUpdateWorkflow(
+      userId,
+      {
+        emailId: body.emailId,
+        subject: body.subject,
+        from: body.from,
+        date: new Date(body.date),
+        snippet: body.snippet,
+      },
+      body.status,
+    );
+    return { success: true, data: workflow };
+  }
+
+  @Patch(':id/priority')
+  async updatePriority(
+    @Param('id') id: string,
+    @Body('priority') priority: number,
+    @Req() req: { user: { userId: string } },
+  ): Promise<{ success: boolean; data: EmailWorkflowEntity }> {
+    const userId = req.user.userId;
+    this.logger.log(`PATCH /workflows/${id}/priority - User: ${userId}`);
+    const updated = await this.getWorkflowsUseCase.updatePriority(
+      userId,
+      id,
+      priority,
+    );
+    return { success: true, data: updated };
   }
 
   @Get('search/suggestions')

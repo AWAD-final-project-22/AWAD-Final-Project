@@ -18,6 +18,11 @@ import { AiSummaryService } from './services/ai-summary.service';
 import { EmailProcessorService } from './services/email-processor.service';
 import { InboxWorkflowService } from './services/inbox-workflow.service';
 import { GmailTokenService } from './services/gmail-token.service';
+import { GmailLabelSyncService } from './services/gmail-label-sync.service';
+import {
+  KanbanColumnRepositoryImpl,
+  KanbanCardRepositoryImpl,
+} from './repositories/kanban.repository.impl';
 
 @Module({
   imports: [
@@ -60,7 +65,16 @@ import { GmailTokenService } from './services/gmail-token.service';
       provide: 'IAiSummaryPort',
       useClass: AiSummaryService,
     },
+    {
+      provide: 'IKanbanColumnRepository',
+      useClass: KanbanColumnRepositoryImpl,
+    },
+    {
+      provide: 'IKanbanCardRepository',
+      useClass: KanbanCardRepositoryImpl,
+    },
     GmailTokenService,
+    GmailLabelSyncService,
     EmailProcessorService,
     InboxWorkflowService,
   ],
@@ -73,10 +87,13 @@ import { GmailTokenService } from './services/gmail-token.service';
     IGmailService,
     'IEmailWorkflowRepository',
     'IAiSummaryPort',
+    'IKanbanColumnRepository',
+    'IKanbanCardRepository',
     GmailTokenService,
+    GmailLabelSyncService,
     EmailProcessorService,
     InboxWorkflowService,
-    JwtModule, 
-  ]
+    JwtModule,
+  ],
 })
 export class InfrastructureModule {}

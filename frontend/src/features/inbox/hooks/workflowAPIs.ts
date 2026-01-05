@@ -4,6 +4,7 @@ import {
   getWorkflowsByStatus,
   updateWorkflowStatus,
   updateWorkflowSnooze,
+  createOrUpdateWorkflow,
 } from '../services/workflowQueries';
 import {
   IWorkflowParams,
@@ -39,7 +40,7 @@ interface UseMutationUpdateStatusOptions {
 }
 
 export const useMutationUpdateWorkflowStatus = (
-  options?: UseMutationUpdateStatusOptions
+  options?: UseMutationUpdateStatusOptions,
 ) => {
   const queryClient = useQueryClient();
 
@@ -49,7 +50,6 @@ export const useMutationUpdateWorkflowStatus = (
       return response.data.data;
     },
     onSuccess: (data) => {
-      // Invalidate all workflow queries to refetch
       queryClient.invalidateQueries({ queryKey: workflowKeys.all });
       options?.onSuccess?.(data);
     },
@@ -66,7 +66,7 @@ interface UseMutationSnoozeOptions {
 }
 
 export const useMutationSnoozeWorkflow = (
-  options?: UseMutationSnoozeOptions
+  options?: UseMutationSnoozeOptions,
 ) => {
   const queryClient = useQueryClient();
 
@@ -74,12 +74,73 @@ export const useMutationSnoozeWorkflow = (
     mutationFn: async (params: { id: string; snoozedUntil: Date }) => {
       const response = await updateWorkflowSnooze(
         params.id,
-        params.snoozedUntil
+        params.snoozedUntil,
       );
       return response.data.data;
     },
     onSuccess: (data) => {
-      // Invalidate all workflow queries to refetch
+      queryClient.invalidateQueries({ queryKey: workflowKeys.all });
+      options?.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
+      options?.onError?.(error);
+    },
+  });
+};
+
+// Hook to create or update workflow (on-demand creation)
+interface UseMutationCreateOrUpdateOptions {
+  onSuccess?: (data: IEmailWorkflow) => void;
+  onError?: (error: Error) => void;
+}
+
+export const useMutationCreateOrUpdateWorkflow = (
+  options?: UseMutationCreateOrUpdateOptions,
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      emailId: string;
+      subject: string;
+      from: string;
+      date: string;
+      snippet?: string;
+      status: WorkflowStatus;
+    }) => {
+      const response = await createOrUpdateWorkflow(params);
+      return response.data.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: workflowKeys.all });
+      options?.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
+      options?.onError?.(error);
+    },
+  });
+};
+
+// Hook to update workflow priority
+interface UseMutationUpdatePriorityOptions {
+  onSuccess?: (data: IEmailWorkflow) => void;
+  onError?: (error: Error) => void;
+}
+
+export const useMutationUpdatePriority = (
+  options?: UseMutationUpdatePriorityOptions,
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: { id: string; priority: number }) => {
+      const { updateWorkflowPriority } = await import(
+        '../services/workflowQueries'
+      );
+      const response = await updateWorkflowPriority(params.id, params.priority);
+      return response.data.data;
+    },
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: workflowKeys.all });
       options?.onSuccess?.(data);
     },
