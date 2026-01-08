@@ -1,33 +1,32 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { Button, Input, Tooltip, Layout } from 'antd';
-import {
-  ReloadOutlined,
-  AppstoreOutlined,
-  SettingOutlined,
-} from '@ant-design/icons';
-import { useKanban } from './hooks/useKanban';
-import { ViewToggle } from '@/components/ViewToggle';
-import { LoadingSpin } from '@/components/LoadingSpin';
 import { EmptyState } from '@/components/EmptyState';
-import { SnoozeModal } from './components/SnoozeModal';
-import { SettingsModal } from './components/SettingsModal';
-import { KanbanColumn } from './components/KanbanColumn';
-import {
-  KanbanLayout,
-  KanbanHeader,
-  KanbanTitle,
-  SearchInput,
-  BoardContainer,
-} from './styles/KanbanPage.style';
-import { SNOOZED_COLUMN_ID } from './constants/kanban.constant';
-import { DragDropContext } from '@hello-pangea/dnd';
-import styled from 'styled-components';
-import { useSearchWorkflows } from '@/features/search/hooks/useSearch';
+import { LoadingSpin } from '@/components/LoadingSpin';
+import { ViewToggle } from '@/components/ViewToggle';
 import { SearchResultsView } from '@/features/search/components/SearchResultsView';
 import { SearchWithSuggestions } from '@/features/search/components/SearchWithSuggestions';
-
+import { useSearchWorkflows } from '@/features/search/hooks/useSearch';
+import {
+  AppstoreOutlined,
+  ReloadOutlined,
+  SettingOutlined,
+} from '@ant-design/icons';
+import { DragDropContext } from '@hello-pangea/dnd';
+import { Button, Layout, Tooltip } from 'antd';
+import React, { useCallback, useState } from 'react';
+import styled from 'styled-components';
+import { KanbanColumn } from './components/KanbanColumn';
+import { SettingsModal } from './components/SettingsModal';
+import { SnoozeModal } from './components/SnoozeModal';
+import { SNOOZED_COLUMN_ID } from './constants/kanban.constant';
+import { useKanban } from './hooks/useKanban';
+import {
+  BoardContainer,
+  KanbanHeader,
+  KanbanLayout,
+  KanbanTitle,
+  SearchInput,
+} from './styles/KanbanPage.style';
 
 const HeaderActions = styled.div`
   display: flex;
@@ -78,6 +77,9 @@ const KanbanPage: React.FC = () => {
     selectedEmailForSnooze,
     refetch,
     handleUpdatePriority,
+    isInboxLoading,
+    isTodoLoading,
+    isDoneLoading,
   } = useKanban();
 
   const handleSnoozeConfirm = (snoozedUntil: Date) => {
@@ -101,7 +103,7 @@ const KanbanPage: React.FC = () => {
     </SearchInput>
   );
 
-  if (isEmailsLoading && !searchQuery) {
+  if (isEmailsLoading || isInboxLoading || isTodoLoading || isDoneLoading) {
     return (
       <KanbanLayout>
         <LoadingSpin />
@@ -113,7 +115,7 @@ const KanbanPage: React.FC = () => {
     columns.some((col) => col.emails.length > 0) || snoozedEmails.length > 0;
 
   // Empty state (no emails and no search)
-  if (!hasEmails && !searchQuery) {
+  if (!hasEmails) {
     return (
       <KanbanLayout>
         <KanbanHeader>

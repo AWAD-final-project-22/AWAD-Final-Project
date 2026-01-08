@@ -38,7 +38,7 @@ export const DivEmail = styled.div<{ $isMobile?: boolean }>`
 
 export const DivEmailList = styled.div<{ $isMobile?: boolean }>`
   height: ${({ $isMobile }) =>
-    $isMobile ? 'calc(100vh - 170px)' : 'calc(100vh - 110px)'};
+    $isMobile ? 'calc(100vh - 170px)' : 'calc(100vh - 115px)'};
   overflow-y: auto;
   &::-webkit-scrollbar {
     display: block;
