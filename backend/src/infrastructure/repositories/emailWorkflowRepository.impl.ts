@@ -146,17 +146,21 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
   }
 
   async syncFromGmail(userId: string, gmailEmails: any[]): Promise<void> {
-    const operations = gmailEmails.map((email) =>
-      this.prisma.emailWorkflow.upsert({
+    const operations = gmailEmails.map((email) => {
+      const gmailMessageId = email.id ? String(email.id) : undefined;
+      if (!gmailMessageId) {
+        throw new Error('gmailMessageId is missing for one of the emails');
+      }
+      return this.prisma.emailWorkflow.upsert({
         where: {
           userId_gmailMessageId: {
             userId,
-            gmailMessageId: email.id,
+            gmailMessageId,
           },
         },
         create: {
           userId,
-          gmailMessageId: email.id,
+          gmailMessageId,
           subject: email.subject || '(No Subject)',
           from: email.from || 'unknown@example.com',
           date: new Date(email.date),
@@ -167,8 +171,8 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
           subject: email.subject || '(No Subject)',
           snippet: email.snippet,
         },
-      }),
-    );
+      });
+    });
 
     await this.prisma.$transaction(operations);
   }

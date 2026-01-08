@@ -52,6 +52,7 @@ import {
   ApiReplyEmail,
   ApiModifyEmail,
   ApiGetAttachment,
+  ApiSyncEmails,
 } from '../decorators/swagger/mail.swagger.decorator';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { GetLabelsUseCase } from '../../application/use-cases/gmail/get-labels.use-case';
@@ -61,9 +62,12 @@ import { SendEmailUseCase } from '../../application/use-cases/gmail/send-email.u
 import { ReplyEmailUseCase } from '../../application/use-cases/gmail/reply-email.use-case';
 import { ModifyEmailUseCase } from '../../application/use-cases/gmail/modify-email.use-case';
 import { GetAttachmentUseCase } from '../../application/use-cases/gmail/get-attachment.use-case';
+import { SyncEmailsUseCase } from '../../application/use-cases/gmail/sync-emails.use-case';
 import { SendEmailDto } from '../dtos/request/send-email.dto';
 import { ReplyEmailDto } from '../dtos/request/reply-email.dto';
 import { ModifyEmailDto } from '../dtos/request/modify-email.dto';
+import { SyncEmailsDto } from '../dtos/request/sync-emails.dto';
+import { SyncEmailsResponseDto } from '../dtos/response/sync-emails.response.dto';
 
 @ApiTags('Mail')
 @ApiBearerAuth('JWT-auth')
@@ -78,6 +82,7 @@ export class GmailController {
     private readonly replyEmailUseCase: ReplyEmailUseCase,
     private readonly modifyEmailUseCase: ModifyEmailUseCase,
     private readonly getAttachmentUseCase: GetAttachmentUseCase,
+    private readonly syncEmailsUseCase: SyncEmailsUseCase,
   ) {}
 
   @Get('mailboxes')
@@ -270,5 +275,19 @@ export class GmailController {
     });
 
     return new StreamableFile(result.data);
+  }
+
+  @Post('sync')
+  @ApiSyncEmails()
+  async syncEmails(
+    @Req() req: Request & { user: { sub: string } },
+    @Query() query: SyncEmailsDto,
+  ): Promise<SyncEmailsResponseDto> {
+    const result = await this.syncEmailsUseCase.execute(req.user.sub, query.limit || 50);
+    
+    return {
+      synced: result.synced,
+      total: result.total,
+    };
   }
 }

@@ -14,6 +14,7 @@ import { IEncryptionService } from '../application/ports/encryption.port';
 import { GmailServiceImpl } from './services/gmail.service';
 import { IGmailService } from '../application/ports/gmail.port';
 import { EmailWorkflowRepositoryImpl } from './repositories/emailWorkflowRepository.impl';
+import type { IEmailWorkflowRepository } from '../domain/repositories/IEmailWorkFflowRepository';
 import { AiSummaryService } from './services/ai-summary.service';
 import { EmailProcessorService } from './services/email-processor.service';
 import { InboxWorkflowService } from './services/inbox-workflow.service';

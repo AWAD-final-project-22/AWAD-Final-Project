@@ -9,6 +9,7 @@ import { SendEmailUseCase } from './send-email.use-case';
 import { ReplyEmailUseCase } from './reply-email.use-case';
 import { ModifyEmailUseCase } from './modify-email.use-case';
 import { GetAttachmentUseCase } from './get-attachment.use-case';
+import { SyncEmailsUseCase } from './sync-emails.use-case';
 
 export const GmailUseCaseProviders = [
   {
@@ -83,6 +84,16 @@ export const GmailUseCaseProviders = [
     ) => new GetAttachmentUseCase(userRepo, gmailService, encryptionService),
     inject: [IUserRepository, IGmailService, IEncryptionService],
   },
+  {
+    provide: SyncEmailsUseCase,
+    useFactory: (
+      userRepo: IUserRepository,
+      gmailService: IGmailService,
+      encryptionService: IEncryptionService,
+      emailWorkflowRepo: any,
+    ) => new SyncEmailsUseCase(userRepo, gmailService, encryptionService, emailWorkflowRepo),
+    inject: [IUserRepository, IGmailService, IEncryptionService, 'IEmailWorkflowRepository'],
+  },
 ];
 
 export const GmailUseCases = [
@@ -94,4 +105,5 @@ export const GmailUseCases = [
   ReplyEmailUseCase,
   ModifyEmailUseCase,
   GetAttachmentUseCase,
+  SyncEmailsUseCase,
 ];

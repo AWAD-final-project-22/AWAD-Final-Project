@@ -31,22 +31,26 @@ export class EmailProcessorService {
       gmailMessageId,
     );
 
-    if (existingWorkflow) {
-      this.logger.log(`[Email ${gmailMessageId}] Found in DB`);
+    const isAiSummaryInvalid =
+      !existingWorkflow?.aiSummary ||
+      existingWorkflow.aiSummary.trim() === '' ||
+      existingWorkflow.aiSummary.includes('AI summarization failed');
+
+    if (existingWorkflow && !isAiSummaryInvalid) {
+      this.logger.log(`[Email ${gmailMessageId}] Found in DB, aiSummary OK`);
       return existingWorkflow;
     }
 
-    this.logger.log(`[Email ${gmailMessageId}] Not in DB, fetching full email`);
-    
-    const accessToken = await this.gmailTokenService.getAccessToken(userId);
+    this.logger.log(`[Email ${gmailMessageId}] ${existingWorkflow ? 'Found in DB but aiSummary lỗi, sẽ summary lại' : 'Not in DB, fetching full email'}`);
 
+    const accessToken = await this.gmailTokenService.getAccessToken(userId);
     const fullEmail = await this.gmailService.getMessage(accessToken, 'me', gmailMessageId);
 
     const headers = fullEmail.payload?.headers || [];
     const subject = headers.find((h: any) => h.name.toLowerCase() === 'subject')?.value || '(No Subject)';
     const from = headers.find((h: any) => h.name.toLowerCase() === 'from')?.value || 'unknown@example.com';
     const date = headers.find((h: any) => h.name.toLowerCase() === 'date')?.value;
-    
+
     let body = fullEmail.snippet || '';
     if (fullEmail.payload?.body?.data) {
       body = Buffer.from(fullEmail.payload.body.data, 'base64').toString('utf-8');
@@ -65,21 +69,30 @@ export class EmailProcessorService {
       subject,
     );
 
-    const newWorkflow = await this.workflowRepository.create({
-      userId,
-      gmailMessageId,
-      subject,
-      from,
-      date: new Date(date || Date.now()),
-      snippet: fullEmail.snippet || '',
-      hasAttachment: hasAttachment,
-      status: WorkflowStatus.INBOX,
-      priority: 0,
-      aiSummary: summary,
-      urgencyScore,
-    });
-
-    this.logger.log(`[Email ${gmailMessageId}] Saved to DB`);
+    let newWorkflow;
+    if (existingWorkflow) {
+      newWorkflow = await this.workflowRepository.updateAiSummary(
+        existingWorkflow.id,
+        summary,
+        urgencyScore,
+      );
+      this.logger.log(`[Email ${gmailMessageId}] Updated aiSummary in DB`);
+    } else {
+      newWorkflow = await this.workflowRepository.create({
+        userId,
+        gmailMessageId,
+        subject,
+        from,
+        date: new Date(date || Date.now()),
+        snippet: fullEmail.snippet || '',
+        hasAttachment: hasAttachment,
+        status: WorkflowStatus.INBOX,
+        priority: 0,
+        aiSummary: summary,
+        urgencyScore,
+      });
+      this.logger.log(`[Email ${gmailMessageId}] Saved to DB`);
+    }
     return newWorkflow;
   }
 
