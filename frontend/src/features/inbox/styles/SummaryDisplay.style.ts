@@ -5,7 +5,11 @@ export const SummaryContainer = styled.div`
   flex-direction: column;
   gap: 4px;
   padding: 8px 12px;
-  background: linear-gradient(135deg, rgba(103, 126, 234, 0.08) 0%, rgba(240, 147, 251, 0.08) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(103, 126, 234, 0.08) 0%,
+    rgba(240, 147, 251, 0.08) 100%
+  );
   border-left: 3px solid #667eea;
   border-radius: 6px;
   margin: 8px 0;
@@ -34,7 +38,11 @@ export const SummaryText = styled.div`
   font-size: 13px;
   line-height: 1.5;
   color: #4a5568;
-  
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+
   @media (max-width: 768px) {
     font-size: 12px;
   }

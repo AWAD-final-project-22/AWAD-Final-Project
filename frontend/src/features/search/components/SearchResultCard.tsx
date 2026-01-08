@@ -88,7 +88,6 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
       <SummaryDisplay
         summary={result.aiSummary}
         preview={result.snippet || ''}
-        maxLength={120}
         showIcon={true}
       />
 

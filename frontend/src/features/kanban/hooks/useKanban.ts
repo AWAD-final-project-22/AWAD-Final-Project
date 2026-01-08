@@ -109,19 +109,31 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
     mailboxId,
   );
 
-  const { data: inboxWorkflows, refetch: refetchInbox } = useGetWorkflows({
+  const {
+    data: inboxWorkflows,
+    refetch: refetchInbox,
+    isLoading: isInboxLoading,
+  } = useGetWorkflows({
     status: WorkflowStatus.INBOX,
     limit: 100,
     offset: 0,
   });
 
-  const { data: todoWorkflows, refetch: refetchTodo } = useGetWorkflows({
+  const {
+    data: todoWorkflows,
+    refetch: refetchTodo,
+    isLoading: isTodoLoading,
+  } = useGetWorkflows({
     status: WorkflowStatus.TODO,
     limit: 100,
     offset: 0,
   });
 
-  const { data: doneWorkflows, refetch: refetchDone } = useGetWorkflows({
+  const {
+    data: doneWorkflows,
+    refetch: refetchDone,
+    isLoading: isDoneLoading,
+  } = useGetWorkflows({
     status: WorkflowStatus.DONE,
     limit: 100,
     offset: 0,
@@ -166,6 +178,7 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
   }, [refetchInbox, refetchTodo, refetchDone, refetchSnoozed, refetchEmails]);
 
   const transformWorkflowToKanbanEmail = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (workflow: any): IKanbanEmail => {
       const gmailEmail = emailsData?.emails?.find(
         (e: IEmail) => e.id === workflow.gmailMessageId,
@@ -699,5 +712,8 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
     handleSortChange,
     handleClearFilters,
     handleUpdatePriority,
+    isInboxLoading,
+    isTodoLoading,
+    isDoneLoading,
   };
 };

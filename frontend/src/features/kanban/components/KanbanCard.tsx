@@ -168,7 +168,6 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
       <SummaryDisplay
         summary={email.aiSummary}
         preview={email.preview}
-        maxLength={120}
         showIcon={true}
       />
 
