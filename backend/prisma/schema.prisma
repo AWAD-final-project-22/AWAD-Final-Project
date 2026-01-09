@@ -35,6 +35,7 @@ model EmailWorkflow {
   date           DateTime
   snippet        String?        @db.Text
   hasAttachment  Boolean        @default(false)
+  isRead         Boolean        @default(false)
   
   status         WorkflowStatus @default(INBOX)
   priority       Int            @default(0) 

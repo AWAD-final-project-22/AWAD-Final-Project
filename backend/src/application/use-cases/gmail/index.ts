@@ -46,8 +46,9 @@ export const GmailUseCaseProviders = [
       userRepo: IUserRepository,
       gmailService: IGmailService,
       encryptionService: IEncryptionService,
-    ) => new GetEmailDetailUseCase(userRepo, gmailService, encryptionService),
-    inject: [IUserRepository, IGmailService, IEncryptionService],
+      emailWorkflowRepo: any,
+    ) => new GetEmailDetailUseCase(userRepo, gmailService, encryptionService, emailWorkflowRepo),
+    inject: [IUserRepository, IGmailService, IEncryptionService, 'IEmailWorkflowRepository'],
   },
   {
     provide: SendEmailUseCase,

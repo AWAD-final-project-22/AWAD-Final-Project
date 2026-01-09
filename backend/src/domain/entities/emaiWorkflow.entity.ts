@@ -9,6 +9,7 @@ export class EmailWorkflowEntity {
   date: Date;
   snippet?: string;
   hasAttachment: boolean;
+  isRead: boolean;
   status: WorkflowStatus;
   priority: number;
   deadline?: Date;

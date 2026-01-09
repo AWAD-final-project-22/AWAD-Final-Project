@@ -17,7 +17,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { GetWorkflowsUseCase } from '../../application/use-cases/workflow/get-workflows.use-case';
 import { WorkflowStatus } from '@prisma/client';
 import { EmailWorkflowEntity } from '../../domain/entities/emaiWorkflow.entity';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import {
   ApiGetWorkflowsDocs,
   ApiUpdateWorkflowStatusDocs,
@@ -31,6 +31,7 @@ import { SemanticSearchUseCase } from '../../application/use-cases/workflow/sema
 import { SemanticSearchDto } from '../dtos/request/semantic-search.dto';
 import { SemanticSearchResponseDto } from '../dtos/response/semantic-search.response.dto';
 import { ApiSemanticSearchDocs } from '../decorators/swagger/semantic-search.swagger.decorator';
+import { GetWorkflowsFilterDto, WorkflowSortBy } from '../dtos/request/get-workflows-filter.dto';
 
 @ApiTags('Workflows')
 @ApiBearerAuth('JWT-auth')
@@ -53,21 +54,40 @@ export class WorkflowController {
     @Query('status', new ParseEnumPipe(WorkflowStatus)) status: WorkflowStatus,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset = 0,
+    @Query() filterDto: GetWorkflowsFilterDto,
   ) {
     const userId = req.user.userId;
     let safeLimit = Math.max(1, limit);
     safeLimit = Math.min(safeLimit, 30);
     const safeOffset = Math.max(0, offset);
+    
+    // Debug logging for filter parsing
+    this.logger.log(
+      `[GET WORKFLOWS] Request - userId: ${userId}, status: ${status}, ` +
+      `filters parsed: ${JSON.stringify({ 
+        unreadOnly: filterDto.unreadOnly, 
+        attachmentsOnly: filterDto.attachmentsOnly,
+        unreadOnlyType: typeof filterDto.unreadOnly,
+        attachmentsOnlyType: typeof filterDto.attachmentsOnly
+      })}`
+    );
+    
     const result = await this.getWorkflowsUseCase.execute({
       userId,
       status,
       limit: safeLimit,
       offset: safeOffset,
+      sortBy: filterDto.sortBy,
+      unreadOnly: filterDto.unreadOnly,
+      attachmentsOnly: filterDto.attachmentsOnly,
     });
+    
     return {
       success: true,
       data: result.data,
       pagination: result.pagination,
+      sort: result.sort,
+      filters: result.filters,
     };
   }
 

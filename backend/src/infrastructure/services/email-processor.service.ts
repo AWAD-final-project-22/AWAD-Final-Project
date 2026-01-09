@@ -165,6 +165,8 @@ export class EmailProcessorService {
           }
 
           const hasAttachment = this.hasAttachment(fullEmail.payload);
+          // Check if email is read: if labelIds includes 'UNREAD', then isRead = false
+          const isRead = !(fullEmail.labelIds?.includes('UNREAD') ?? false);
 
           const aiResult = aiResults[messageId] || { summary: 'AI summarization failed', urgencyScore: 0.5 };
           const newWorkflow = await this.workflowRepository.create({
@@ -175,6 +177,7 @@ export class EmailProcessorService {
             date: new Date(date || Date.now()),
             snippet: fullEmail.snippet || '',
             hasAttachment: hasAttachment,
+            isRead: isRead,
             status: WorkflowStatus.INBOX,
             priority: 0,
             aiSummary: aiResult.summary,

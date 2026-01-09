@@ -17,8 +17,20 @@ export interface IEmailWorkflowRepository {
     status: WorkflowStatus,
     limit: number,
     offset: number,
+    options?: {
+      sortBy?: 'date_newest' | 'date_oldest';
+      unreadOnly?: boolean;
+      attachmentsOnly?: boolean;
+    },
   ): Promise<EmailWorkflowEntity[]>;
-  countByUserAndStatus(userId: string, status: WorkflowStatus): Promise<number>;
+  countByUserAndStatus(
+    userId: string,
+    status: WorkflowStatus,
+    options?: {
+      unreadOnly?: boolean;
+      attachmentsOnly?: boolean;
+    },
+  ): Promise<number>;
   findSnoozedEmailsDue(now?: Date): Promise<EmailWorkflowEntity[]>;
   updateStatus(
     id: string,
@@ -43,6 +55,8 @@ export interface IEmailWorkflowRepository {
   countSearchResults(userId: string, query: string): Promise<number>;
 
   updatePriority(id: string, priority: number): Promise<EmailWorkflowEntity>;
+
+  updateReadStatus(id: string, isRead: boolean): Promise<EmailWorkflowEntity>;
 
   updateEmbeddingStatus(id: string, status: string): Promise<EmailWorkflowEntity>;
   updateEmbedding(id: string, embedding: number[]): Promise<EmailWorkflowEntity>;

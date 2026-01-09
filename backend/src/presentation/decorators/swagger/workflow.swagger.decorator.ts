@@ -6,12 +6,13 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { WorkflowStatus } from '@prisma/client';
+import { WorkflowSortBy } from '../../dtos/request/get-workflows-filter.dto';
 
 export function ApiGetWorkflowsDocs() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Get email workflows by status',
-      description: 'INBOX: fetch từ Gmail + AI summarize | TODO/DONE/SNOOZED: query DB',
+      summary: 'Get email workflows by status with sorting and filtering',
+      description: 'Get workflows with optional sorting (date_newest/date_oldest) and filtering (unreadOnly, attachmentsOnly). INBOX: fetch từ Gmail + AI summarize | TODO/DONE/SNOOZED: query DB. Filters and sorting apply in real-time.',
     }),
     ApiQuery({
       name: 'status',
@@ -32,6 +33,27 @@ export function ApiGetWorkflowsDocs() {
       required: false,
       example: 0,
       description: 'Items to skip (default: 0)',
+    }),
+    ApiQuery({
+      name: 'sortBy',
+      enum: WorkflowSortBy,
+      required: false,
+      description: 'Sort workflows by date: date_newest (newest first) or date_oldest (oldest first)',
+      example: WorkflowSortBy.DATE_NEWEST,
+    }),
+    ApiQuery({
+      name: 'unreadOnly',
+      type: Boolean,
+      required: false,
+      example: false,
+      description: 'Show only unread emails (filter)',
+    }),
+    ApiQuery({
+      name: 'attachmentsOnly',
+      type: Boolean,
+      required: false,
+      example: false,
+      description: 'Show only emails with attachments (filter)',
     }),
     ApiResponse({
       status: 200,
@@ -62,6 +84,13 @@ export function ApiGetWorkflowsDocs() {
             limit: 10,
             offset: 0,
             hasMore: true,
+          },
+          sort: {
+            sortBy: 'date_newest',
+          },
+          filters: {
+            unreadOnly: false,
+            attachmentsOnly: false,
           },
         },
       },

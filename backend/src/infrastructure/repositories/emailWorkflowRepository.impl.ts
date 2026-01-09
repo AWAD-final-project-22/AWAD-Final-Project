@@ -14,6 +14,8 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
     return new EmailWorkflowEntity({
       ...workflow,
       snippet: workflow.snippet ?? undefined,
+      hasAttachment: workflow.hasAttachment ?? false,
+      isRead: workflow.isRead ?? false,
       deadline: workflow.deadline ?? undefined,
       snoozedUntil: workflow.snoozedUntil ?? undefined,
       aiSummary: workflow.aiSummary ?? undefined,
@@ -170,12 +172,16 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
           from: email.from || 'unknown@example.com',
           date: new Date(email.date),
           snippet: email.snippet,
+          hasAttachment: email.hasAttachment ?? false,
+          isRead: email.isRead ?? false,
           status: WorkflowStatus.INBOX,
           embeddingStatus: 'PENDING',
         },
         update: {
           subject: email.subject || '(No Subject)',
           snippet: email.snippet,
+          hasAttachment: email.hasAttachment ?? undefined,
+          isRead: email.isRead ?? undefined,
         },
       });
     });
@@ -215,27 +221,104 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
     status: WorkflowStatus,
     limit: number,
     offset: number,
+    options?: {
+      sortBy?: 'date_newest' | 'date_oldest';
+      unreadOnly?: boolean;
+      attachmentsOnly?: boolean;
+    },
   ): Promise<EmailWorkflowEntity[]> {
-    const workflows = await this.prisma.emailWorkflow.findMany({
-      where: { userId, status },
-      orderBy: [
+    const where: any = { userId, status };
+
+    // Apply filters
+    const activeFilters: string[] = [];
+    
+    if (options?.unreadOnly) {
+      where.isRead = false;
+      activeFilters.push('unreadOnly=true');
+    }
+
+    if (options?.attachmentsOnly) {
+      where.hasAttachment = true;
+      activeFilters.push('attachmentsOnly=true');
+    }
+
+    // Log filter summary
+    const filterStatus = activeFilters.length > 0 
+      ? `Active filters: ${activeFilters.join(', ')}` 
+      : 'No filters applied (showing all)';
+    
+    this.logger.log(
+      `[GET WORKFLOWS] Query - userId: ${userId}, status: ${status}, ` +
+      `limit: ${limit}, offset: ${offset}, ` +
+      `${filterStatus} | ` +
+      `Request params: ${JSON.stringify({ unreadOnly: options?.unreadOnly, attachmentsOnly: options?.attachmentsOnly })}`
+    );
+
+    // Apply sorting
+    let orderBy: any[] = [];
+    if (options?.sortBy === 'date_oldest') {
+      orderBy = [{ date: 'asc' }];
+      this.logger.log(`[GET WORKFLOWS] Sort: date_oldest`);
+    } else if (options?.sortBy === 'date_newest') {
+      orderBy = [{ date: 'desc' }];
+      this.logger.log(`[GET WORKFLOWS] Sort: date_newest`);
+    } else {
+      // Default: priority, urgency, then date
+      orderBy = [
         { priority: 'desc' },
         { urgencyScore: 'desc' },
         { date: 'desc' },
-      ],
+      ];
+      this.logger.log(`[GET WORKFLOWS] Sort: default (priority, urgency, date)`);
+    }
+
+    // Check total count before filtering for debugging
+    const totalBeforeFilter = await this.prisma.emailWorkflow.count({
+      where: { userId, status },
+    });
+    this.logger.log(`[GET WORKFLOWS] Total emails (before filters): ${totalBeforeFilter}`);
+
+    const workflows = await this.prisma.emailWorkflow.findMany({
+      where,
+      orderBy,
       take: limit,
       skip: offset,
     });
+
+    this.logger.log(
+      `[GET WORKFLOWS] Found ${workflows.length} workflows ` +
+      `(hasAttachment breakdown: ${workflows.filter(w => w.hasAttachment).length} with attachments, ` +
+      `${workflows.filter(w => !w.hasAttachment).length} without)`
+    );
+
     return workflows.map((w) => this.toEntity(w));
   }
 
   async countByUserAndStatus(
     userId: string,
     status: WorkflowStatus,
+    options?: {
+      unreadOnly?: boolean;
+      attachmentsOnly?: boolean;
+    },
   ): Promise<number> {
-    return this.prisma.emailWorkflow.count({
-      where: { userId, status },
-    });
+    const where: any = { userId, status };
+
+    // Apply filters
+    if (options?.unreadOnly) {
+      where.isRead = false;
+    }
+
+    if (options?.attachmentsOnly) {
+      where.hasAttachment = true;
+    }
+
+    const count = await this.prisma.emailWorkflow.count({ where });
+    this.logger.log(
+      `[GET WORKFLOWS COUNT] Total: ${count} (userId: ${userId}, status: ${status}, ` +
+      `filters: ${JSON.stringify({ unreadOnly: options?.unreadOnly, attachmentsOnly: options?.attachmentsOnly })})`
+    );
+    return count;
   }
 
   async searchEmails(
@@ -468,6 +551,20 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
       where: { id },
       data: {
         priority,
+        updatedAt: new Date(),
+      },
+    });
+    return this.toEntity(workflow);
+  }
+
+  async updateReadStatus(
+    id: string,
+    isRead: boolean,
+  ): Promise<EmailWorkflowEntity> {
+    const workflow = await this.prisma.emailWorkflow.update({
+      where: { id },
+      data: {
+        isRead,
         updatedAt: new Date(),
       },
     });

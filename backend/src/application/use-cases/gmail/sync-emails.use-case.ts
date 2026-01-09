@@ -39,6 +39,8 @@ export class SyncEmailsUseCase extends BaseGmailUseCase {
         headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value || '';
 
       const hasAttachment = this.checkForAttachments(email);
+      // Check if email is read: if labelIds includes 'UNREAD', then isRead = false
+      const isRead = !(email.labelIds?.includes('UNREAD') ?? false);
 
       return {
         id: email.id,
@@ -47,6 +49,7 @@ export class SyncEmailsUseCase extends BaseGmailUseCase {
         date: new Date(Number(email.internalDate)),
         snippet: email.snippet,
         hasAttachment,
+        isRead,
         status: WorkflowStatus.INBOX,
         priority: 0,
       };

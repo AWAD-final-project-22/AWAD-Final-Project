@@ -10,6 +10,9 @@ export interface GetWorkflowsInput {
   status: WorkflowStatus;
   limit: number;
   offset: number;
+  sortBy?: 'date_newest' | 'date_oldest';
+  unreadOnly?: boolean;
+  attachmentsOnly?: boolean;
 }
 
 export interface GetWorkflowsOutput {
@@ -19,6 +22,13 @@ export interface GetWorkflowsOutput {
     limit: number;
     offset: number;
     hasMore: boolean;
+  };
+  sort?: {
+    sortBy?: 'date_newest' | 'date_oldest';
+  };
+  filters?: {
+    unreadOnly?: boolean;
+    attachmentsOnly?: boolean;
   };
 }
 
@@ -30,35 +40,19 @@ export class GetWorkflowsUseCase {
   ) {}
 
   async execute(input: GetWorkflowsInput): Promise<GetWorkflowsOutput> {
-    const { userId, status, limit, offset } = input;
+    const { userId, status, limit, offset, sortBy, unreadOnly, attachmentsOnly } = input;
+
+    const filterOptions = {
+      sortBy,
+      unreadOnly,
+      attachmentsOnly,
+    };
 
     if (status === WorkflowStatus.INBOX) {
-      const { data, total } = await this.inboxWorkflowService.getInboxWorkflows(
-        userId,
-        limit,
-        offset,
-      );
-      
-      const inboxData = data.filter(e => e.status === WorkflowStatus.INBOX);
-      
-      // Queue embedding jobs for fetched workflows (side effect, non-blocking)
-      if (this.embeddingQueueService) {
-        this.embeddingQueueService
-          .queuePendingEmbeddings(userId, inboxData)
-          .catch((err) => {
-            console.error('Failed to queue embedding jobs:', err);
-          });
-      }
-      
-      return {
-        data: inboxData,
-        pagination: {
-          total,
-          limit,
-          offset,
-          hasMore: offset + limit < total,
-        },
-      };
+      const syncLimit = Math.max(limit + offset, 20);
+      this.inboxWorkflowService.syncInboxEmails(userId, syncLimit).catch((err) => {
+        console.error('Failed to sync inbox emails:', err);
+      });
     }
 
     const workflows =
@@ -67,14 +61,18 @@ export class GetWorkflowsUseCase {
         status,
         limit,
         offset,
+        filterOptions,
       );
 
     const total = await this.workflowRepository.countByUserAndStatus(
       userId,
       status,
+      {
+        unreadOnly,
+        attachmentsOnly,
+      },
     );
 
-    // Queue embedding jobs for fetched workflows (side effect, non-blocking)
     if (this.embeddingQueueService) {
       this.embeddingQueueService
         .queuePendingEmbeddings(userId, workflows)
@@ -83,7 +81,7 @@ export class GetWorkflowsUseCase {
         });
     }
 
-    return {
+    const response: GetWorkflowsOutput = {
       data: workflows,
       pagination: {
         total,
@@ -92,6 +90,24 @@ export class GetWorkflowsUseCase {
         hasMore: offset + limit < total,
       },
     };
+
+    // Only include sort if provided
+    if (sortBy) {
+      response.sort = { sortBy };
+    }
+
+    // Only include filters if at least one is provided
+    if (unreadOnly !== undefined || attachmentsOnly !== undefined) {
+      response.filters = {};
+      if (unreadOnly !== undefined) {
+        response.filters.unreadOnly = unreadOnly;
+      }
+      if (attachmentsOnly !== undefined) {
+        response.filters.attachmentsOnly = attachmentsOnly;
+      }
+    }
+
+    return response;
   }
 
   async updateWorkflowStatus(
