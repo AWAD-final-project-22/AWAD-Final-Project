@@ -286,8 +286,11 @@ export class GmailController {
     const result = await this.syncEmailsUseCase.execute(req.user.sub, query.limit || 50);
     
     return {
-      synced: result.synced,
-      total: result.total,
+      success: true,
+      data: {
+        synced: result.synced,
+        total: result.total,
+      },
     };
   }
 }

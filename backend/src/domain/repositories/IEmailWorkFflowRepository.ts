@@ -43,4 +43,17 @@ export interface IEmailWorkflowRepository {
   countSearchResults(userId: string, query: string): Promise<number>;
 
   updatePriority(id: string, priority: number): Promise<EmailWorkflowEntity>;
+
+  updateEmbeddingStatus(id: string, status: string): Promise<EmailWorkflowEntity>;
+  updateEmbedding(id: string, embedding: number[]): Promise<EmailWorkflowEntity>;
+  findPendingEmbeddings(userId: string, limit: number): Promise<EmailWorkflowEntity[]>;
+  semanticSearch(
+    userId: string,
+    queryEmbedding: number[],
+    limit: number,
+    offset?: number,
+  ): Promise<{ workflows: EmailWorkflowEntity[]; total: number }>;
+  batchUpdateEmbeddings(
+    updates: Array<{ id: string; embedding: number[] | null; status: string }>,
+  ): Promise<void>;
 }

@@ -15,6 +15,8 @@ export class EmailWorkflowEntity {
   snoozedUntil?: Date;
   aiSummary?: string;
   urgencyScore?: number;
+  embedding?: number[];
+  embeddingStatus?: string;
   createdAt: Date;
   updatedAt: Date;
 

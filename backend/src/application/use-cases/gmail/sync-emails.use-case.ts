@@ -1,19 +1,23 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { BaseGmailUseCase } from './base-gmail.use-case';
 import type { IEmailWorkflowRepository } from '../../../domain/repositories/IEmailWorkFflowRepository';
 import { IUserRepository } from '../../../domain/repositories/user.repository';
 import { IGmailService } from '../../ports/gmail.port';
 import { IEncryptionService } from '../../ports/encryption.port';
 import { WorkflowStatus } from '@prisma/client';
+import { EmbeddingQueueService } from '../../../infrastructure/services/embedding-queue.service';
 
 @Injectable()
 export class SyncEmailsUseCase extends BaseGmailUseCase {
+  private readonly logger = new Logger(SyncEmailsUseCase.name);
+
   constructor(
     userRepository: IUserRepository,
     gmailService: IGmailService,
     encryptionService: IEncryptionService,
     @Inject('IEmailWorkflowRepository')
     private readonly emailWorkflowRepository: IEmailWorkflowRepository,
+    @Optional() private readonly embeddingQueueService?: EmbeddingQueueService,
   ) {
     super(userRepository, gmailService, encryptionService);
   }
@@ -49,6 +53,26 @@ export class SyncEmailsUseCase extends BaseGmailUseCase {
     });
 
     await this.emailWorkflowRepository.syncFromGmail(userId, emailWorkflows);
+
+    // Queue embedding jobs only for emails that don't have embeddings yet
+    if (this.embeddingQueueService && emailWorkflows.length > 0) {
+      const emailIds = emailWorkflows.map(e => e.id).filter(Boolean);
+      this.logger.log(`[SYNC EMAILS] Checking embedding status for ${emailIds.length} synced emails`);
+      
+      // Fetch workflows from database to check embedding status
+      const workflows: any[] = [];
+      for (const emailId of emailIds) {
+        const workflow = await this.emailWorkflowRepository.findByGmailMessageId(userId, emailId);
+        if (workflow) {
+          workflows.push(workflow);
+        }
+      }
+
+      // Use service to queue embedding jobs
+      await this.embeddingQueueService.queuePendingEmbeddings(userId, workflows).catch((err) => {
+        this.logger.error(`[SYNC EMAILS] Failed to queue embedding jobs:`, err);
+      });
+    }
 
     return {
       synced: emailWorkflows.length,

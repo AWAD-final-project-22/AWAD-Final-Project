@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class SyncEmailsResponseDto {
+class SyncEmailsDataDto {
   @ApiProperty({
     description: 'Number of emails successfully synced to database',
     example: 50,
@@ -12,4 +12,18 @@ export class SyncEmailsResponseDto {
     example: 150,
   })
   total: number;
+}
+
+export class SyncEmailsResponseDto {
+  @ApiProperty({
+    description: 'Indicates if the operation was successful',
+    example: true,
+  })
+  success: boolean;
+
+  @ApiProperty({
+    description: 'Sync result data',
+    type: SyncEmailsDataDto,
+  })
+  data: SyncEmailsDataDto;
 }

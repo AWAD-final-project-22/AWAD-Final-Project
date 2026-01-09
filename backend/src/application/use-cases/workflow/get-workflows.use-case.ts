@@ -2,6 +2,8 @@ import { WorkflowStatus } from '@prisma/client';
 import type { IEmailWorkflowRepository } from '../../../domain/repositories/IEmailWorkFflowRepository';
 import { EmailWorkflowEntity } from '../../../domain/entities/emaiWorkflow.entity';
 import { InboxWorkflowService } from '../../../infrastructure/services/inbox-workflow.service';
+import { EmbeddingQueueService } from '../../../infrastructure/services/embedding-queue.service';
+import { Optional } from '@nestjs/common';
 
 export interface GetWorkflowsInput {
   userId: string;
@@ -24,6 +26,7 @@ export class GetWorkflowsUseCase {
   constructor(
     private readonly workflowRepository: IEmailWorkflowRepository,
     private readonly inboxWorkflowService: InboxWorkflowService,
+    @Optional() private readonly embeddingQueueService?: EmbeddingQueueService,
   ) {}
 
   async execute(input: GetWorkflowsInput): Promise<GetWorkflowsOutput> {
@@ -35,9 +38,20 @@ export class GetWorkflowsUseCase {
         limit,
         offset,
       );
-
+      
+      const inboxData = data.filter(e => e.status === WorkflowStatus.INBOX);
+      
+      // Queue embedding jobs for fetched workflows (side effect, non-blocking)
+      if (this.embeddingQueueService) {
+        this.embeddingQueueService
+          .queuePendingEmbeddings(userId, inboxData)
+          .catch((err) => {
+            console.error('Failed to queue embedding jobs:', err);
+          });
+      }
+      
       return {
-        data,
+        data: inboxData,
         pagination: {
           total,
           limit,
@@ -59,6 +73,15 @@ export class GetWorkflowsUseCase {
       userId,
       status,
     );
+
+    // Queue embedding jobs for fetched workflows (side effect, non-blocking)
+    if (this.embeddingQueueService) {
+      this.embeddingQueueService
+        .queuePendingEmbeddings(userId, workflows)
+        .catch((err) => {
+          console.error('Failed to queue embedding jobs:', err);
+        });
+    }
 
     return {
       data: workflows,
