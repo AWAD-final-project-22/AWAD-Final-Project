@@ -25,39 +25,29 @@ export class InboxWorkflowService {
     private readonly emailProcessorService: EmailProcessorService,
   ) {}
 
-  async getInboxWorkflows(
-    userId: string,
-    limit: number,
-    offset: number,
-  ): Promise<InboxWorkflowResult> {
-    this.logger.log(`[INBOX] Fetching from Gmail API (limit: ${limit}, offset: ${offset})`);
+  
+  async syncInboxEmails(userId: string, limit: number): Promise<void> {
+    this.logger.log(`[INBOX SYNC] Syncing ${limit} emails from Gmail API`);
 
-    const accessToken = await this.gmailTokenService.getAccessToken(userId);
+    try {
+      const accessToken = await this.gmailTokenService.getAccessToken(userId);
 
-    const fetchCount = Math.max(limit + offset, 20);
-    const gmailResponse = await this.gmailService.listMessages(accessToken, {
-      labelIds: ['INBOX'],
-      maxResults: fetchCount,
-    });
+      const gmailResponse = await this.gmailService.listMessages(accessToken, {
+        labelIds: ['INBOX'],
+        maxResults: limit,
+      });
 
-    this.logger.log(`[Gmail API] Fetched ${gmailResponse.messages?.length || 0} emails`);
+      if (!gmailResponse.messages || gmailResponse.messages.length === 0) {
+        return;
+      }
 
-    if (!gmailResponse.messages || gmailResponse.messages.length === 0) {
-      return { data: [], total: 0 };
+      const messageIds = gmailResponse.messages.map((msg: any) => msg.id);
+      await this.emailProcessorService.processBatchGmailEmails(userId, messageIds);
+
+      this.logger.log(`[INBOX SYNC] Synced ${messageIds.length} emails to database`);
+    } catch (error) {
+      this.logger.error(`[INBOX SYNC] Failed to sync emails:`, error);
+      throw error;
     }
-
-    const allMessageIds = gmailResponse.messages.map((msg: any) => msg.id);
-    const messageIds = allMessageIds.slice(offset, offset + limit);
-    const processedEmails = await this.emailProcessorService.processBatchGmailEmails(
-      userId,
-      messageIds,
-    );
-
-    const total = await this.workflowRepository.countByUserAndStatus(
-      userId,
-      WorkflowStatus.INBOX,
-    );
-
-    return { data: processedEmails, total };
   }
 }

@@ -17,7 +17,7 @@ import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { GetWorkflowsUseCase } from '../../application/use-cases/workflow/get-workflows.use-case';
 import { WorkflowStatus } from '@prisma/client';
 import { EmailWorkflowEntity } from '../../domain/entities/emaiWorkflow.entity';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import {
   ApiGetWorkflowsDocs,
   ApiUpdateWorkflowStatusDocs,
@@ -27,6 +27,11 @@ import { SearchWorkflowsUseCase } from '../../application/use-cases/workflow/sea
 import { GetSuggestionsUseCase } from '../../application/use-cases/workflow/get-suggestions.use-case';
 import { GetSuggestionsDto } from '../dtos/request/get-suggestions.dto';
 import { GetSuggestionsResponseDto, SuggestionItemDto } from '../dtos/response/suggestion.response.dto';
+import { SemanticSearchUseCase } from '../../application/use-cases/workflow/semantic-search.use-case';
+import { SemanticSearchDto } from '../dtos/request/semantic-search.dto';
+import { SemanticSearchResponseDto } from '../dtos/response/semantic-search.response.dto';
+import { ApiSemanticSearchDocs } from '../decorators/swagger/semantic-search.swagger.decorator';
+import { GetWorkflowsFilterDto, WorkflowSortBy } from '../dtos/request/get-workflows-filter.dto';
 
 @ApiTags('Workflows')
 @ApiBearerAuth('JWT-auth')
@@ -39,6 +44,7 @@ export class WorkflowController {
     private readonly getWorkflowsUseCase: GetWorkflowsUseCase,
     private readonly searchWorkflowsUseCase: SearchWorkflowsUseCase,
     private readonly getSuggestionsUseCase: GetSuggestionsUseCase,
+    private readonly semanticSearchUseCase: SemanticSearchUseCase,
   ) {}
 
   @Get()
@@ -48,21 +54,40 @@ export class WorkflowController {
     @Query('status', new ParseEnumPipe(WorkflowStatus)) status: WorkflowStatus,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit = 10,
     @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset = 0,
+    @Query() filterDto: GetWorkflowsFilterDto,
   ) {
     const userId = req.user.userId;
-    this.logger.log(`GET /workflows - User: ${userId}, Status: ${status}`);
-    const safeLimit = Math.max(1, limit);
+    let safeLimit = Math.max(1, limit);
+    safeLimit = Math.min(safeLimit, 30);
     const safeOffset = Math.max(0, offset);
+    
+    // Debug logging for filter parsing
+    this.logger.log(
+      `[GET WORKFLOWS] Request - userId: ${userId}, status: ${status}, ` +
+      `filters parsed: ${JSON.stringify({ 
+        unreadOnly: filterDto.unreadOnly, 
+        attachmentsOnly: filterDto.attachmentsOnly,
+        unreadOnlyType: typeof filterDto.unreadOnly,
+        attachmentsOnlyType: typeof filterDto.attachmentsOnly
+      })}`
+    );
+    
     const result = await this.getWorkflowsUseCase.execute({
       userId,
       status,
       limit: safeLimit,
       offset: safeOffset,
+      sortBy: filterDto.sortBy,
+      unreadOnly: filterDto.unreadOnly,
+      attachmentsOnly: filterDto.attachmentsOnly,
     });
+    
     return {
       success: true,
       data: result.data,
       pagination: result.pagination,
+      sort: result.sort,
+      filters: result.filters,
     };
   }
 
@@ -95,7 +120,7 @@ export class WorkflowController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
   ) {
     const userId = req.user.userId;
-    this.logger.log(`GET /workflows/search - User: ${userId}, Query: ${query}`);
+    this.logger.log(`GET /workflows/search (Fuzzy Search) - User: ${userId}, Query: "${query}"`);
 
     if (!query || query.trim() === '') {
       return {
@@ -109,12 +134,19 @@ export class WorkflowController {
 
     const finalOffset = page > 1 ? (page - 1) * safeLimit : safeOffset;
 
+    const startTime = Date.now();
     const result = await this.searchWorkflowsUseCase.execute({
       userId,
       query: query.trim(),
       limit: safeLimit,
       offset: finalOffset,
     });
+    const totalTime = Date.now() - startTime;
+
+    this.logger.log(
+      `[FUZZY SEARCH] ✅ API response - Found ${result.data.length} results, ` +
+      `Total: ${result.pagination.total}, Time: ${totalTime}ms`
+    );
 
     return {
       success: true,
@@ -220,6 +252,62 @@ export class WorkflowController {
     return {
       success: true,
       suggestions,
+    };
+  }
+
+  @Get('search/semantic')
+  @ApiSemanticSearchDocs()
+  async semanticSearch(
+    @Req() req: any,
+    @Query() queryDto: SemanticSearchDto,
+  ): Promise<SemanticSearchResponseDto> {
+    const userId = req.user.userId;
+    const { query, limit = 10, offset = 0, page = 1 } = queryDto;
+    
+    this.logger.log(`GET /workflows/search/semantic - User: ${userId}, Query: ${query}`);
+
+    if (!query || query.trim() === '') {
+      return {
+        success: false,
+        data: [],
+        pagination: {
+          total: 0,
+          limit: limit || 10,
+          offset: offset || 0,
+          hasMore: false,
+          currentPage: page || 1,
+        },
+      };
+    }
+
+    const safeLimit = Math.max(1, Math.min(limit || 10, 100));
+    const safeOffset = Math.max(0, offset || 0);
+    const finalPage = Math.max(1, page || 1);
+    const finalOffset = finalPage > 1 ? (finalPage - 1) * safeLimit : safeOffset;
+
+    const startTime = Date.now();
+    const result = await this.semanticSearchUseCase.execute({
+      userId,
+      query: query.trim(),
+      limit: safeLimit,
+      offset: finalOffset,
+    });
+    const totalTime = Date.now() - startTime;
+
+    this.logger.log(
+      `[SEMANTIC SEARCH] ✅ API response - ` +
+      `Found ${result.data.length} results, ` +
+      `Total: ${result.pagination.total}, ` +
+      `Time: ${totalTime}ms`
+    );
+
+    return {
+      success: true,
+      data: result.data,
+      pagination: {
+        ...result.pagination,
+        currentPage: finalPage,
+      },
     };
   }
 }

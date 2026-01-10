@@ -35,6 +35,7 @@ model EmailWorkflow {
   date           DateTime
   snippet        String?        @db.Text
   hasAttachment  Boolean        @default(false)
+  isRead         Boolean        @default(false)
   
   status         WorkflowStatus @default(INBOX)
   priority       Int            @default(0) 
@@ -44,6 +45,9 @@ model EmailWorkflow {
   aiSummary      String?        @db.Text
   urgencyScore   Float?       
   
+  embedding      Unsupported("vector(768)")?
+  embeddingStatus String?        @default("PENDING")
+  
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   
@@ -51,6 +55,7 @@ model EmailWorkflow {
   @@index([userId, status])
   @@index([userId, snoozedUntil])
   @@index([userId, deadline])
+  @@index([userId, embeddingStatus])
 
   @@index([userId, subject])
   @@index([userId, from])

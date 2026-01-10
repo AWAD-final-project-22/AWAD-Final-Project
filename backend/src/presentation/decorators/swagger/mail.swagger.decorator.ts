@@ -10,6 +10,8 @@ import {
 import { SendEmailDto } from '../../dtos/request/send-email.dto';
 import { ReplyEmailDto } from '../../dtos/request/reply-email.dto';
 import { ModifyEmailDto } from '../../dtos/request/modify-email.dto';
+import { SyncEmailsDto } from '../../dtos/request/sync-emails.dto';
+import { SyncEmailsResponseDto } from '../../dtos/response/sync-emails.response.dto';
 
 export const ApiGetMailboxes = () =>
   applyDecorators(
@@ -286,5 +288,21 @@ export const ApiGetAttachment = () =>
     ApiResponse({ status: 401, description: 'Unauthorized' }),
     ApiResponse({ status: 404, description: 'Attachment not found' }),
     ApiResponse({ status: 500, description: 'Failed to retrieve attachment' }),
+  );
+
+export const ApiSyncEmails = () =>
+  applyDecorators(
+    ApiOperation({
+      summary: 'Sync emails from Gmail to database',
+      description: 'Fetch the latest emails from Gmail and save them to the database for workflow management',
+    }),
+    ApiResponse({
+      status: 200,
+      description: 'Emails synced successfully',
+      type: SyncEmailsResponseDto,
+    }),
+    ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' }),
+    ApiResponse({ status: 404, description: 'User not found or not linked with Google' }),
+    ApiResponse({ status: 500, description: 'Failed to sync emails' }),
   );
 

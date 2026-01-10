@@ -14,6 +14,7 @@ import { IEncryptionService } from '../application/ports/encryption.port';
 import { GmailServiceImpl } from './services/gmail.service';
 import { IGmailService } from '../application/ports/gmail.port';
 import { EmailWorkflowRepositoryImpl } from './repositories/emailWorkflowRepository.impl';
+import type { IEmailWorkflowRepository } from '../domain/repositories/IEmailWorkFflowRepository';
 import { AiSummaryService } from './services/ai-summary.service';
 import { EmailProcessorService } from './services/email-processor.service';
 import { InboxWorkflowService } from './services/inbox-workflow.service';
@@ -23,6 +24,13 @@ import {
   KanbanColumnRepositoryImpl,
   KanbanCardRepositoryImpl,
 } from './repositories/kanban.repository.impl';
+import { RedisService } from './services/redis.service';
+import { GeminiEmbeddingService } from './services/gemini-embedding.service';
+import type { IEmbeddingPort } from '../application/ports/embedding.port';
+import { EmbeddingQueue } from './queues/embedding.queue';
+import { EmbeddingProcessorService } from './services/embedding-processor.service';
+import { EmbeddingWorker } from './workers/embedding.worker';
+import { EmbeddingQueueService } from './services/embedding-queue.service';
 
 @Module({
   imports: [
@@ -77,6 +85,19 @@ import {
     GmailLabelSyncService,
     EmailProcessorService,
     InboxWorkflowService,
+    RedisService,
+    {
+      provide: 'IEmbeddingPort',
+      useClass: GeminiEmbeddingService,
+    },
+    EmbeddingQueue,
+    EmbeddingProcessorService,
+    EmbeddingWorker,
+    {
+      provide: EmbeddingQueueService,
+      useFactory: (embeddingQueue?: EmbeddingQueue) => new EmbeddingQueueService(embeddingQueue),
+      inject: [{ token: EmbeddingQueue, optional: true }],
+    },
   ],
   exports: [
     PrismaService,
@@ -93,6 +114,12 @@ import {
     GmailLabelSyncService,
     EmailProcessorService,
     InboxWorkflowService,
+    RedisService,
+    'IEmbeddingPort',
+    EmbeddingQueue,
+    EmbeddingProcessorService,
+    EmbeddingWorker,
+    EmbeddingQueueService,
     JwtModule,
   ],
 })

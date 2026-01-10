@@ -9,12 +9,15 @@ export class EmailWorkflowEntity {
   date: Date;
   snippet?: string;
   hasAttachment: boolean;
+  isRead: boolean;
   status: WorkflowStatus;
   priority: number;
   deadline?: Date;
   snoozedUntil?: Date;
   aiSummary?: string;
   urgencyScore?: number;
+  embedding?: number[];
+  embeddingStatus?: string;
   createdAt: Date;
   updatedAt: Date;
 

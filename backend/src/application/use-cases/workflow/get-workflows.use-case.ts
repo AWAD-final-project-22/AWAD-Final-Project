@@ -2,12 +2,17 @@ import { WorkflowStatus } from '@prisma/client';
 import type { IEmailWorkflowRepository } from '../../../domain/repositories/IEmailWorkFflowRepository';
 import { EmailWorkflowEntity } from '../../../domain/entities/emaiWorkflow.entity';
 import { InboxWorkflowService } from '../../../infrastructure/services/inbox-workflow.service';
+import { EmbeddingQueueService } from '../../../infrastructure/services/embedding-queue.service';
+import { Optional } from '@nestjs/common';
 
 export interface GetWorkflowsInput {
   userId: string;
   status: WorkflowStatus;
   limit: number;
   offset: number;
+  sortBy?: 'date_newest' | 'date_oldest';
+  unreadOnly?: boolean;
+  attachmentsOnly?: boolean;
 }
 
 export interface GetWorkflowsOutput {
@@ -18,33 +23,36 @@ export interface GetWorkflowsOutput {
     offset: number;
     hasMore: boolean;
   };
+  sort?: {
+    sortBy?: 'date_newest' | 'date_oldest';
+  };
+  filters?: {
+    unreadOnly?: boolean;
+    attachmentsOnly?: boolean;
+  };
 }
 
 export class GetWorkflowsUseCase {
   constructor(
     private readonly workflowRepository: IEmailWorkflowRepository,
     private readonly inboxWorkflowService: InboxWorkflowService,
+    @Optional() private readonly embeddingQueueService?: EmbeddingQueueService,
   ) {}
 
   async execute(input: GetWorkflowsInput): Promise<GetWorkflowsOutput> {
-    const { userId, status, limit, offset } = input;
+    const { userId, status, limit, offset, sortBy, unreadOnly, attachmentsOnly } = input;
+
+    const filterOptions = {
+      sortBy,
+      unreadOnly,
+      attachmentsOnly,
+    };
 
     if (status === WorkflowStatus.INBOX) {
-      const { data, total } = await this.inboxWorkflowService.getInboxWorkflows(
-        userId,
-        limit,
-        offset,
-      );
-
-      return {
-        data,
-        pagination: {
-          total,
-          limit,
-          offset,
-          hasMore: offset + limit < total,
-        },
-      };
+      const syncLimit = Math.max(limit + offset, 20);
+      this.inboxWorkflowService.syncInboxEmails(userId, syncLimit).catch((err) => {
+        console.error('Failed to sync inbox emails:', err);
+      });
     }
 
     const workflows =
@@ -53,14 +61,27 @@ export class GetWorkflowsUseCase {
         status,
         limit,
         offset,
+        filterOptions,
       );
 
     const total = await this.workflowRepository.countByUserAndStatus(
       userId,
       status,
+      {
+        unreadOnly,
+        attachmentsOnly,
+      },
     );
 
-    return {
+    if (this.embeddingQueueService) {
+      this.embeddingQueueService
+        .queuePendingEmbeddings(userId, workflows)
+        .catch((err) => {
+          console.error('Failed to queue embedding jobs:', err);
+        });
+    }
+
+    const response: GetWorkflowsOutput = {
       data: workflows,
       pagination: {
         total,
@@ -69,6 +90,24 @@ export class GetWorkflowsUseCase {
         hasMore: offset + limit < total,
       },
     };
+
+    // Only include sort if provided
+    if (sortBy) {
+      response.sort = { sortBy };
+    }
+
+    // Only include filters if at least one is provided
+    if (unreadOnly !== undefined || attachmentsOnly !== undefined) {
+      response.filters = {};
+      if (unreadOnly !== undefined) {
+        response.filters.unreadOnly = unreadOnly;
+      }
+      if (attachmentsOnly !== undefined) {
+        response.filters.attachmentsOnly = attachmentsOnly;
+      }
+    }
+
+    return response;
   }
 
   async updateWorkflowStatus(
