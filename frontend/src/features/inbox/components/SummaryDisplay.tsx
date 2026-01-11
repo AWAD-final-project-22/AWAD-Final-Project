@@ -41,7 +41,9 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
           <SummaryText>{displayText}</SummaryText>
         </Tooltip>
       ) : (
-        <PreviewText>{displayText}</PreviewText>
+        <Tooltip title={displayText}>
+          <PreviewText>{displayText}</PreviewText>
+        </Tooltip>
       )}
     </SummaryContainer>
   );

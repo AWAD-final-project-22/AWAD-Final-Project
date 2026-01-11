@@ -19,7 +19,11 @@ import {
 } from '../interfaces/kanban.interface';
 import { SNOOZED_COLUMN_ID } from '../constants/kanban.constant';
 import { useGetKanbanColumns } from './kanbanAPIs';
-import { LIMIT_DEFAULT } from '@/constants/common.constant';
+import {
+  LIMIT_DEFAULT,
+  OFFSET_DEFAULT,
+  WORKFLOW_EMAIL_LIMIT,
+} from '@/constants/common.constant';
 import {
   useGetWorkflows,
   useMutationUpdateWorkflowStatus,
@@ -115,8 +119,8 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
     isLoading: isInboxLoading,
   } = useGetWorkflows({
     status: WorkflowStatus.INBOX,
-    limit: 100,
-    offset: 0,
+    limit: WORKFLOW_EMAIL_LIMIT,
+    offset: OFFSET_DEFAULT,
   });
 
   const {
@@ -125,8 +129,8 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
     isLoading: isTodoLoading,
   } = useGetWorkflows({
     status: WorkflowStatus.TODO,
-    limit: 100,
-    offset: 0,
+    limit: WORKFLOW_EMAIL_LIMIT,
+    offset: OFFSET_DEFAULT,
   });
 
   const {
@@ -135,14 +139,14 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
     isLoading: isDoneLoading,
   } = useGetWorkflows({
     status: WorkflowStatus.DONE,
-    limit: 100,
-    offset: 0,
+    limit: WORKFLOW_EMAIL_LIMIT,
+    offset: OFFSET_DEFAULT,
   });
 
   const { data: snoozedWorkflows, refetch: refetchSnoozed } = useGetWorkflows({
     status: WorkflowStatus.SNOOZED,
-    limit: 100,
-    offset: 0,
+    limit: WORKFLOW_EMAIL_LIMIT,
+    offset: OFFSET_DEFAULT,
   });
 
   const { mutateAsync: updateStatus } = useMutationUpdateWorkflowStatus({
@@ -326,10 +330,8 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
     return result;
   }, [groupedEmails, filterEmails, sortEmails]);
 
-  // Fetch dynamic columns from settings - must be before handleDragEnd
   const { data: dynamicColumns = [] } = useGetKanbanColumns();
 
-  // Fetch emails for each custom column's label
   const labelEmailsResults = useQueries({
     queries: dynamicColumns.map((col) => ({
       queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, col.label],
@@ -347,7 +349,6 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
   const { mutateAsync: modifyLabels } = useMutationModifyEmailLabels({
     onSuccess: () => {
       refetchAllWorkflows();
-      // Invalidate all email queries to refresh custom columns
       queryClient.invalidateQueries({
         queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY],
       });
@@ -399,10 +400,8 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
         (col) => `custom-${col.id}` === sourceColumnId,
       );
 
-      // Check if source is from a static workflow column (for determining if we need workflow update)
       const isSourceStaticColumn = ['TODO', 'DONE'].includes(sourceColumnId);
 
-      // Handle label modifications for custom columns
       if (destCustomColumn || sourceCustomColumn) {
         try {
           const addLabelIds = destCustomColumn
@@ -427,7 +426,6 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
         }
       }
 
-      // If destination is a custom column only (not moving to static), we're done
       if (destCustomColumn && !isSourceStaticColumn) {
         notification.success({
           message: 'Email Moved',
@@ -600,10 +598,7 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
 
   // Get columns to display with filtered and sorted emails
   const columns = useMemo(() => {
-    // Custom columns from settings (includes INBOX by default)
-    // These are user-defined and can be edited/deleted
     const customColumns = dynamicColumns.map((col) => {
-      // Find emails fetched for this column's label
       const labelIndex = dynamicColumns.findIndex((c) => c.id === col.id);
       const labelEmails = labelEmailsResults[labelIndex]?.data?.emails || [];
       const mappedEmails: IKanbanEmail[] = labelEmails.map((email: IEmail) => ({

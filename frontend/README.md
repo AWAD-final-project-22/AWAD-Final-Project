@@ -73,7 +73,7 @@ Open [http://localhost:3001](http://localhost:3001) to view it in the browser.
 
 ```bash
 npm run build
-set PORT=3001
+$env:PORT=3001
 npm run start
 ```
 
