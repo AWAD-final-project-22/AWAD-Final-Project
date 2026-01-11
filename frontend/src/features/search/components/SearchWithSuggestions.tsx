@@ -3,7 +3,11 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { AutoComplete, Input } from 'antd';
 import type { AutoCompleteProps } from 'antd';
-import { SearchOutlined, UserOutlined, FileTextOutlined } from '@ant-design/icons';
+import {
+  SearchOutlined,
+  UserOutlined,
+  FileTextOutlined,
+} from '@ant-design/icons';
 import styled from 'styled-components';
 import { useSuggestions } from '../hooks/useSuggestions';
 import { SuggestionItem } from '../interfaces/suggestions.interface';
@@ -12,7 +16,7 @@ const { Search } = Input;
 
 const StyledAutoComplete = styled(AutoComplete)`
   width: 100%;
-  
+
   .ant-select-dropdown {
     z-index: 1050;
   }
@@ -47,6 +51,7 @@ interface SearchWithSuggestionsProps {
   style?: React.CSSProperties;
   debounceMs?: number;
   maxSuggestions?: number;
+  updateParamsSearchEmail?: (value: string) => void;
 }
 
 export const SearchWithSuggestions: React.FC<SearchWithSuggestionsProps> = ({
@@ -59,12 +64,12 @@ export const SearchWithSuggestions: React.FC<SearchWithSuggestionsProps> = ({
   style,
   debounceMs = 300,
   maxSuggestions = 5,
+  updateParamsSearchEmail,
 }) => {
   const [searchValue, setSearchValue] = useState(controlledValue || '');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sync with controlled value
   useEffect(() => {
     if (controlledValue !== undefined && controlledValue !== searchValue) {
       setSearchValue(controlledValue);
@@ -82,9 +87,9 @@ export const SearchWithSuggestions: React.FC<SearchWithSuggestionsProps> = ({
   const handleInputChange = useCallback(
     (value: string) => {
       setSearchValue(value);
+      updateParamsSearchEmail?.(value);
       controlledOnChange?.(value);
-
-      // Debounce logic
+      onSearch(value);
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
@@ -122,7 +127,10 @@ export const SearchWithSuggestions: React.FC<SearchWithSuggestionsProps> = ({
 
   // Format suggestions cho AutoComplete
   const options: AutoCompleteProps['options'] = React.useMemo(() => {
-    if (!suggestionsData?.suggestions || suggestionsData.suggestions.length === 0) {
+    if (
+      !suggestionsData?.suggestions ||
+      suggestionsData.suggestions.length === 0
+    ) {
       return [];
     }
 

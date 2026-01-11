@@ -42,7 +42,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const [showEmailDetail, setShowEmailDetail] = useState(false);
 
   const pPage = searchParams.get(PARAMS_URL.PAGE) || PAGE_DEFAULT;
-  const pSearchQuery = searchParams.get(PARAMS_URL.SEARCH_QUERY) || '';
+  const pSearchQuery = searchParams.get(PARAMS_URL.SEARCH_EMAIL) || '';
 
   // Sync searchText with URL query param
   useEffect(() => {
@@ -55,7 +55,6 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     { page: Number(pPage), limit: Number(LIMIT_DEFAULT) },
     selectedMailbox,
   );
-  console.log('emails data', emails);
 
   const { data: emailDetail, isLoading: isEmailDetailLoading } =
     useGetEmailDetailById(selectedEmail || '');
@@ -130,7 +129,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const handleCheckboxChange = useCallback(
@@ -225,7 +224,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   };
 
   const handleSearch = (query: string) => {
-    updateSearchQuery({ [PARAMS_URL.SEARCH_QUERY]: query });
+    updateSearchQuery({ [PARAMS_URL.SEARCH_EMAIL]: query });
   };
 
   // Show email detail when mailID is provided from URL (for Kanban navigation)
