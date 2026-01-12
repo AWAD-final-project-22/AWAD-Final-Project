@@ -79,7 +79,17 @@ export const useMutationModifyEmailById = ({
 }: UseMutationLoginOptions) => {
   return useMutation({
     mutationKey: [API_PATH.EMAIL.MODIFY_EMAIL.API_KEY],
-    mutationFn: (id: string) => modifyEmailById(id),
+    mutationFn: ({
+      id,
+      action,
+      addLabelIds,
+      removeLabelIds,
+    }: {
+      id: string;
+      action?: string;
+      addLabelIds?: string[];
+      removeLabelIds?: string[];
+    }) => modifyEmailById(id, action, addLabelIds, removeLabelIds),
     onSuccess,
     onError,
   });
@@ -96,11 +106,13 @@ export const useMutationModifyEmailLabels = ({
       id,
       addLabelIds,
       removeLabelIds,
+      action,
     }: {
       id: string;
       addLabelIds?: string[];
       removeLabelIds?: string[];
-    }) => modifyEmailLabels(id, addLabelIds, removeLabelIds),
+      action?: string;
+    }) => modifyEmailLabels(id, addLabelIds, removeLabelIds, action),
     onSuccess,
     onError,
   });
