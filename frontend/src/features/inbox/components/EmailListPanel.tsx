@@ -67,6 +67,7 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
             <EmailItem
               key={email.id}
               $selected={selectedEmail?.id === email.id}
+              $isRead={email.isRead}
               onClick={() => handleEmailClick(email.id)}
             >
               <div

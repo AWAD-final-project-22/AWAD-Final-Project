@@ -18,6 +18,8 @@ import {
   useMutationDownloadAttachment,
 } from './mailAPIs';
 import { MAILBOX_DEFAULT_NAMES } from '../constants/emails.constant';
+import { useQueryClient } from '@tanstack/react-query';
+import { API_PATH } from '@/constants/apis.constant';
 
 interface InBoxProps {
   mailBoxID?: string;
@@ -28,6 +30,7 @@ interface InBoxProps {
 export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const { searchParams, updateSearchQuery } = useControlParams();
   const { notification } = App.useApp();
+  const queryClient = useQueryClient();
 
   const [checkedEmails, setCheckedEmails] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState(false);
@@ -88,9 +91,12 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const { mutateAsync: modifyEmail, isPending: isModifyEmailPending } =
     useMutationModifyEmailById({
       onSuccess: () => {
-        notification.success({
-          message: 'Modify Email Success',
-          description: 'The email has been modified successfully.',
+        // Invalidate queries to refetch updated data
+        queryClient.invalidateQueries({
+          queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, selectedMailbox],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [API_PATH.EMAIL.GET_DETAIL_MAIL.API_KEY],
         });
       },
       onError: (error) => {
@@ -168,14 +174,46 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   );
 
   const handleEmailClick = useCallback(
-    (emailId: string) => {
+    async (emailId: string) => {
       setSelectedEmail(emailId);
       if (isMobile) {
         setShowEmailList(false);
         setShowEmailDetail(true);
       }
+
+      // Find the email to check if it's unread
+      const email = emails?.emails?.find((e: IEmail) => e.id === emailId);
+      if (email && email.isRead === false) {
+        // Optimistically update the cache
+        queryClient.setQueryData(
+          [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, selectedMailbox],
+          (oldData: { emails: IEmail[] } | undefined) => {
+            if (!oldData) return oldData;
+            return {
+              ...oldData,
+              emails: oldData.emails.map((e: IEmail) =>
+                e.id === emailId ? { ...e, isRead: true } : e
+              ),
+            };
+          }
+        );
+
+        // Call API to mark as read
+        try {
+          await modifyEmail({
+            id: emailId,
+            action: 'mark_read',
+          });
+        } catch (error) {
+          console.error('Failed to mark email as read:', error);
+          // Revert optimistic update on error
+          queryClient.invalidateQueries({
+            queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, selectedMailbox],
+          });
+        }
+      }
     },
-    [isMobile],
+    [isMobile, emails, queryClient, selectedMailbox, modifyEmail],
   );
 
   const handleBackToList = useCallback(() => {

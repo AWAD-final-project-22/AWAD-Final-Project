@@ -59,8 +59,17 @@ export function sendEmail(
 }
 
 // Modify email by email id
-export function modifyEmailById(id: string): Promise<AxiosResponse<void>> {
-  return axiosClient.post<void>(API_PATH.EMAIL.MODIFY_EMAIL.API_PATH(id));
+export function modifyEmailById(
+  id: string,
+  action?: string,
+  addLabelIds?: string[],
+  removeLabelIds?: string[],
+): Promise<AxiosResponse<void>> {
+  return axiosClient.post<void>(API_PATH.EMAIL.MODIFY_EMAIL.API_PATH(id), {
+    action,
+    addLabelIds,
+    removeLabelIds,
+  });
 }
 
 // Modify email labels (add/remove)
@@ -68,8 +77,10 @@ export function modifyEmailLabels(
   id: string,
   addLabelIds?: string[],
   removeLabelIds?: string[],
+  action?: string,
 ): Promise<AxiosResponse<void>> {
   return axiosClient.post<void>(API_PATH.EMAIL.MODIFY_EMAIL.API_PATH(id), {
+    action,
     addLabelIds,
     removeLabelIds,
   });

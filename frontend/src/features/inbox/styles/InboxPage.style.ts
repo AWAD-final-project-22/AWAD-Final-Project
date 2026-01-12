@@ -66,13 +66,14 @@ export const EmailDetail = styled.div<{ $show: boolean }>`
   }
 `;
 
-export const EmailItem = styled.div<{ $selected: boolean }>`
+export const EmailItem = styled.div<{ $selected: boolean; $isRead?: boolean }>`
   padding: 12px 16px;
   border-bottom: 1px solid #f0f0f0;
   cursor: pointer;
   display: flex;
   align-items: center;
-  background: ${({ $selected }) => ($selected ? '#e6f7ff' : 'white')};
+  background: ${({ $selected, $isRead }) =>
+    $selected ? '#e6f7ff' : $isRead === false ? '#e5e6e8' : 'white'};
   &:hover {
     background: #f5f5f5;
   }
