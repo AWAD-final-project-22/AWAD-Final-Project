@@ -306,3 +306,25 @@ export const ApiSyncEmails = () =>
     ApiResponse({ status: 500, description: 'Failed to sync emails' }),
   );
 
+export const ApiDeleteEmail = () =>
+  applyDecorators(
+    ApiOperation({
+      summary: 'Delete an email',
+      description: 'Move email to trash by adding TRASH label and removing INBOX label',
+    }),
+    ApiParam({ name: 'id', description: 'Email message ID to delete', example: '18c8f1234567890a' }),
+    ApiResponse({
+      status: 200,
+      description: 'Email deleted successfully',
+      schema: {
+        example: {
+          success: true,
+          messageId: '18c8f1234567890a',
+          labelIds: ['TRASH'],
+        },
+      },
+    }),
+    ApiResponse({ status: 401, description: 'Unauthorized' }),
+    ApiResponse({ status: 404, description: 'Email not found' }),
+  );
+

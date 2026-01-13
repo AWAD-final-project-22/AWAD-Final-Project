@@ -49,6 +49,7 @@ const InboxPage: React.FC = () => {
     handlePageChange,
     handleSearch,
     emails,
+    handleDeleteEmail,
   } = useInbox({ isMobile, mailID: emailIdFromUrl || undefined });
 
   return (
@@ -89,6 +90,7 @@ const InboxPage: React.FC = () => {
               isEmailsLoading={isEmailsLoading}
               handlePageChange={handlePageChange}
               emails={emails}
+              handleDeleteEmail={handleDeleteEmail}
             />
 
             <EmailDetailPanel
@@ -98,6 +100,7 @@ const InboxPage: React.FC = () => {
               isReplyEmailPending={isReplyEmailPending}
               isEmailDetailLoading={isEmailDetailLoading}
               onDownloadAttachment={handleDownloadAttachment}
+              handleDeleteEmail={handleDeleteEmail}
             />
           </DivEmail>
         </Layout>

@@ -5,12 +5,13 @@ import { LoadingSpin } from '@/components/LoadingSpin';
 import {
   DeleteOutlined,
   DownloadOutlined,
+  ExclamationCircleOutlined,
   ForwardOutlined,
   PaperClipOutlined,
   SendOutlined,
   StarOutlined,
 } from '@ant-design/icons';
-import { Button, Divider, Tooltip, Typography } from 'antd';
+import { App, Button, Divider, Tooltip, Typography } from 'antd';
 import { useState } from 'react';
 import { getFileIcon } from '../helpers/fileIcon.helper';
 import {
@@ -45,6 +46,7 @@ interface EmailDetailProps {
     attachmentId: string,
     filename: string,
   ) => void;
+  handleDeleteEmail?: (emailId: string) => Promise<void>;
 }
 
 export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
@@ -54,7 +56,9 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
   isReplyEmailPending = false,
   isEmailDetailLoading = false,
   onDownloadAttachment,
+  handleDeleteEmail,
 }) => {
+  const { modal } = App.useApp();
   const [replyModalOpen, setReplyModalOpen] = useState(false);
   const [replyParams, setReplyParams] = useState<
     IReplyEmailParams | undefined
@@ -85,6 +89,22 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
     if (email && attachmentId) {
       onDownloadAttachment(email.id, attachmentId, filename);
     }
+  };
+
+  const showDeleteConfirm = () => {
+    if (!email || !handleDeleteEmail) return;
+
+    modal.confirm({
+      title: 'Delete Email',
+      icon: <ExclamationCircleOutlined />,
+      content: 'Are you sure you want to delete this email?',
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        await handleDeleteEmail(email.id);
+      },
+    });
   };
 
   const renderLoading = () => {
@@ -129,7 +149,11 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
                       />
                     </Tooltip>
                     <Tooltip title='Delete'>
-                      <Button type='text' icon={<DeleteOutlined />} />
+                      <Button
+                        type='text'
+                        icon={<DeleteOutlined />}
+                        onClick={showDeleteConfirm}
+                      />
                     </Tooltip>
                   </div>
                 </div>

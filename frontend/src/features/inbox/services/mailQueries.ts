@@ -86,6 +86,11 @@ export function modifyEmailLabels(
   });
 }
 
+// Delete email by email id
+export function deleteEmailById(id: string): Promise<AxiosResponse<void>> {
+  return axiosClient.post<void>(API_PATH.EMAIL.DELETE_EMAIL.API_PATH(id));
+}
+
 // Stream attachment by attachment id
 export function streamAttachmentById(
   messageId: string,

@@ -16,6 +16,7 @@ import {
   useMutationReplyEmailById,
   useMutationSendEmail,
   useMutationDownloadAttachment,
+  useMutationDeleteEmail,
 } from './mailAPIs';
 import { MAILBOX_DEFAULT_NAMES } from '../constants/emails.constant';
 import { useQueryClient } from '@tanstack/react-query';
@@ -93,7 +94,10 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
       onSuccess: () => {
         // Invalidate queries to refetch updated data
         queryClient.invalidateQueries({
-          queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, selectedMailbox],
+          queryKey: [
+            API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY,
+            selectedMailbox,
+          ],
         });
         queryClient.invalidateQueries({
           queryKey: [API_PATH.EMAIL.GET_DETAIL_MAIL.API_KEY],
@@ -101,6 +105,29 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
       },
       onError: (error) => {
         console.error('Modify Email Failed:', error);
+      },
+    });
+
+  const { mutateAsync: deleteEmail, isPending: isDeleteEmailPending } =
+    useMutationDeleteEmail({
+      onSuccess: () => {
+        notification.success({
+          message: 'Delete Email Success',
+          description: 'Email has been moved to trash successfully.',
+        });
+        queryClient.invalidateQueries({
+          queryKey: [
+            API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY,
+            selectedMailbox,
+          ],
+        });
+      },
+      onError: (error) => {
+        console.error('Delete Email Failed:', error);
+        notification.error({
+          message: 'Delete Email Failed',
+          description: 'Could not delete the email. Please try again.',
+        });
       },
     });
 
@@ -182,9 +209,9 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
       }
 
       // Find the email to check if it's unread
-      const email = emails?.emails?.find((e: IEmail) => e.id === emailId);
+      if (!emails?.emails) return;
+      const email = emails.emails.find((e: IEmail) => e.id === emailId);
       if (email && email.isRead === false) {
-        // Optimistically update the cache
         queryClient.setQueryData(
           [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, selectedMailbox],
           (oldData: { emails: IEmail[] } | undefined) => {
@@ -192,10 +219,10 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
             return {
               ...oldData,
               emails: oldData.emails.map((e: IEmail) =>
-                e.id === emailId ? { ...e, isRead: true } : e
+                e.id === emailId ? { ...e, isRead: true } : e,
               ),
             };
-          }
+          },
         );
 
         // Call API to mark as read
@@ -208,7 +235,10 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
           console.error('Failed to mark email as read:', error);
           // Revert optimistic update on error
           queryClient.invalidateQueries({
-            queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, selectedMailbox],
+            queryKey: [
+              API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY,
+              selectedMailbox,
+            ],
           });
         }
       }
@@ -265,6 +295,22 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     updateSearchQuery({ [PARAMS_URL.SEARCH_EMAIL]: query });
   };
 
+  const handleDeleteEmail = async (emailId: string) => {
+    try {
+      await deleteEmail(emailId);
+      if (selectedEmail === emailId) {
+        setSelectedEmail(null);
+      }
+      setCheckedEmails((prev) => {
+        const newChecked = new Set(prev);
+        newChecked.delete(emailId);
+        return newChecked;
+      });
+    } catch (error) {
+      console.error('Delete Email Failed:', error);
+    }
+  };
+
   // Show email detail when mailID is provided from URL (for Kanban navigation)
   useEffect(() => {
     if (mailID) {
@@ -305,6 +351,9 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
     modifyEmail,
     isModifyEmailPending,
+
+    handleDeleteEmail,
+    isDeleteEmailPending,
 
     checkedEmails,
     collapsed,

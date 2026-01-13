@@ -53,6 +53,7 @@ import {
   ApiModifyEmail,
   ApiGetAttachment,
   ApiSyncEmails,
+  ApiDeleteEmail,
 } from '../decorators/swagger/mail.swagger.decorator';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { GetLabelsUseCase } from '../../application/use-cases/gmail/get-labels.use-case';
@@ -63,6 +64,7 @@ import { ReplyEmailUseCase } from '../../application/use-cases/gmail/reply-email
 import { ModifyEmailUseCase } from '../../application/use-cases/gmail/modify-email.use-case';
 import { GetAttachmentUseCase } from '../../application/use-cases/gmail/get-attachment.use-case';
 import { SyncEmailsUseCase } from '../../application/use-cases/gmail/sync-emails.use-case';
+import { DeleteEmailUseCase } from '../../application/use-cases/gmail/delete-email.use-case';
 import { SendEmailDto } from '../dtos/request/send-email.dto';
 import { ReplyEmailDto } from '../dtos/request/reply-email.dto';
 import { ModifyEmailDto } from '../dtos/request/modify-email.dto';
@@ -83,6 +85,7 @@ export class GmailController {
     private readonly modifyEmailUseCase: ModifyEmailUseCase,
     private readonly getAttachmentUseCase: GetAttachmentUseCase,
     private readonly syncEmailsUseCase: SyncEmailsUseCase,
+    private readonly deleteEmailUseCase: DeleteEmailUseCase,
   ) {}
 
   @Get('mailboxes')
@@ -292,5 +295,14 @@ export class GmailController {
         total: result.total,
       },
     };
+  }
+
+  @Post('emails/:id/delete')
+  @ApiDeleteEmail()
+  async deleteEmail(
+    @Req() req: Request & { user: { sub: string } },
+    @Param('id') id: string,
+  ) {
+    return await this.deleteEmailUseCase.execute(req.user.sub, id);
   }
 }

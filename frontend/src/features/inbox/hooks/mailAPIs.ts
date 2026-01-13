@@ -9,6 +9,7 @@ import {
   replyEmailById,
   sendEmail,
   streamAttachmentById,
+  deleteEmailById,
 } from '../services/mailQueries';
 import { UseMutationLoginOptions } from '@/interfaces/query';
 import {
@@ -113,6 +114,19 @@ export const useMutationModifyEmailLabels = ({
       removeLabelIds?: string[];
       action?: string;
     }) => modifyEmailLabels(id, addLabelIds, removeLabelIds, action),
+    onSuccess,
+    onError,
+  });
+};
+
+// Delete email by email id
+export const useMutationDeleteEmail = ({
+  onSuccess,
+  onError,
+}: UseMutationLoginOptions) => {
+  return useMutation({
+    mutationKey: [API_PATH.EMAIL.DELETE_EMAIL.API_KEY],
+    mutationFn: (id: string) => deleteEmailById(id),
     onSuccess,
     onError,
   });
