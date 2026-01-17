@@ -1,6 +1,7 @@
 'use client';
 
 import { useWindowSize } from '@/hooks/useWindowSize';
+import { useLogout } from '@/hooks/useLogout';
 import { breakpoints } from '@/themes/breakpoint';
 import { Layout } from 'antd';
 import React, { useState } from 'react';
@@ -20,6 +21,8 @@ const InboxPage: React.FC = () => {
   const [openComposeModal, setOpenComposeModal] = useState(false);
   const searchParams = useSearchParams();
   const emailIdFromUrl = searchParams.get(PARAMS_URL.EMAIL_ID);
+
+  const { handleLogout, isLoggingOut } = useLogout();
 
   const {
     mailboxes,
@@ -66,6 +69,8 @@ const InboxPage: React.FC = () => {
           setSearchText={setSearchText}
           setOpenComposeModal={setOpenComposeModal}
           handleSearch={handleSearch}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
         />
 
         <Layout>

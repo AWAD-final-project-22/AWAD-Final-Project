@@ -5,6 +5,7 @@ import { LoadingSpin } from '@/components/LoadingSpin';
 import { SearchResultsView } from '@/features/search/components/SearchResultsView';
 import { SearchWithSuggestions } from '@/features/search/components/SearchWithSuggestions';
 import { useSearchWorkflows } from '@/features/search/hooks/useSearch';
+import { useLogout } from '@/hooks/useLogout';
 import {
   AppstoreOutlined,
   SortDescendingOutlined,
@@ -38,11 +39,9 @@ const KanbanPage: React.FC = () => {
   const [searchPage, setSearchPage] = useState(1);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
-  // Filter states
-  const [sortByDate, setSortByDate] = useState<string | undefined>(undefined);
-  // const [filterUnread, setFilterUnread] = useState(false);
-  // const [filterAttachments, setFilterAttachments] = useState(false);
+  const { handleLogout, isLoggingOut } = useLogout();
 
+  const [sortByDate, setSortByDate] = useState<string | undefined>(undefined);
   const { updateSearchQuery } = useControlParams();
 
   const {
@@ -208,6 +207,8 @@ const KanbanPage: React.FC = () => {
           <Action
             setSettingsModalOpen={setSettingsModalOpen}
             refreshKanban={refetch}
+            onLogout={handleLogout}
+            isLoggingOut={isLoggingOut}
           />
         </KanbanHeader>
         <Layout.Content>
@@ -234,6 +235,8 @@ const KanbanPage: React.FC = () => {
         <Action
           setSettingsModalOpen={setSettingsModalOpen}
           refreshKanban={refetch}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
         />
       </KanbanHeader>
 
