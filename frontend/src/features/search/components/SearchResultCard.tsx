@@ -93,11 +93,11 @@ export const SearchResultCard: React.FC<SearchResultCardProps> = ({
 
       <CardActions>
         <OpenMailLink
-          href={`/inbox?emailId=${result.gmailMessageId}`}
+          href={`https://mail.google.com/mail/u/0/#inbox/${result.gmailMessageId}`}
           target='_blank'
           rel='noopener noreferrer'
         >
-          View Email
+          View in Gmail
           <ExportOutlined />
         </OpenMailLink>
       </CardActions>

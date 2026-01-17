@@ -191,11 +191,11 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
           </ActionButton>
         )}
         <OpenMailLink
-          href={`/inbox?emailId=${email.id}`}
+          href={`https://mail.google.com/mail/u/0/#inbox/${email.id}`}
           target='_blank'
           rel='noopener noreferrer'
         >
-          Open Mail
+          Open in Gmail
           <ExportOutlined />
         </OpenMailLink>
       </CardActions>
