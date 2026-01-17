@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAppDispatch } from '@/redux/hooks';
-import { logout as logoutAction } from '@/redux/slices/authSlice';
+import { useAppDispatch, useAppSelector } from '@/redux/hooks';
+import {
+  logout as logoutAction,
+  selectAccessToken,
+} from '@/redux/slices/authSlice';
 
 const LOGOUT_CHANNEL_NAME = 'logout_sync_channel';
 
@@ -14,7 +17,13 @@ export interface UseLogoutSyncOptions {
 export const useLogoutSync = (options?: UseLogoutSyncOptions) => {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const accessToken = useAppSelector(selectAccessToken);
   const channelRef = useRef<BroadcastChannel | null>(null);
+  const onLogoutReceivedRef = useRef(options?.onLogoutReceived);
+  onLogoutReceivedRef.current = options?.onLogoutReceived;
+
+  const accessTokenRef = useRef(accessToken);
+  accessTokenRef.current = accessToken;
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -22,10 +31,10 @@ export const useLogoutSync = (options?: UseLogoutSyncOptions) => {
 
       channelRef.current.onmessage = (event) => {
         if (event.data === 'LOGOUT') {
+          if (!accessTokenRef.current) return;
+
           dispatch(logoutAction());
-          document.cookie =
-            'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
-          options?.onLogoutReceived?.();
+          onLogoutReceivedRef.current?.();
           router.push('/login');
         }
       };
@@ -34,7 +43,7 @@ export const useLogoutSync = (options?: UseLogoutSyncOptions) => {
     return () => {
       channelRef.current?.close();
     };
-  }, [dispatch, router, options]);
+  }, [dispatch, router]);
 
   const broadcastLogout = useCallback(() => {
     if (channelRef.current) {
