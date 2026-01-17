@@ -6,6 +6,7 @@ import {
   FileOutlined,
   FolderOutlined,
   InboxOutlined,
+  LogoutOutlined,
   SendOutlined,
   StarOutlined,
 } from '@ant-design/icons';
@@ -13,8 +14,8 @@ import { Button, Drawer, Menu } from 'antd';
 import React from 'react';
 import { IMailbox } from '../interfaces/mailAPI.interface';
 import { DesktopSider, SidebarContent } from '../styles/InboxPage.style';
+import { LogoutButtonContainer } from '../styles/LogoutButton.style';
 import { SearchWithSuggestions } from '@/features/search/components/SearchWithSuggestions';
-
 
 interface SidebarProps {
   collapsed: boolean;
@@ -27,6 +28,8 @@ interface SidebarProps {
   setSearchText: (value: string) => void;
   setOpenComposeModal?: (value: boolean) => void;
   handleSearch?: (query: string) => void;
+  onLogout?: () => void;
+  isLoggingOut?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -40,6 +43,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setSearchText,
   setOpenComposeModal,
   handleSearch,
+  onLogout,
+  isLoggingOut,
 }) => {
   const items = mailboxes?.map((mailbox) => {
     let icon: React.ReactNode;
@@ -102,6 +107,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }}
         items={items}
       />
+      {onLogout && (
+        <LogoutButtonContainer>
+          <Button
+            type='default'
+            danger
+            icon={<LogoutOutlined />}
+            block
+            onClick={onLogout}
+            loading={isLoggingOut}
+          >
+            {(!collapsed || isMobile) && 'Logout'}
+          </Button>
+        </LogoutButtonContainer>
+      )}
     </SidebarContent>
   );
 

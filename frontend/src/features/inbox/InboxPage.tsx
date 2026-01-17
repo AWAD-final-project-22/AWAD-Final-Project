@@ -1,10 +1,14 @@
 'use client';
 
 import { useWindowSize } from '@/hooks/useWindowSize';
+import { useLogoutSync } from '@/hooks/useLogoutSync';
+import { useMutationLogout } from '@/hooks/apis/authenAPIs';
+import { useAppDispatch } from '@/redux/hooks';
+import { setAccessToken } from '@/redux/slices/authSlice';
 import { breakpoints } from '@/themes/breakpoint';
-import { Layout } from 'antd';
+import { App, Layout } from 'antd';
 import React, { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ComposeEmailModal } from './components/ComposeEmailModal';
 import { EmailDetailPanel } from './components/EmailDetailPanel';
 import { EmailListPanel } from './components/EmailListPanel';
@@ -20,6 +24,30 @@ const InboxPage: React.FC = () => {
   const [openComposeModal, setOpenComposeModal] = useState(false);
   const searchParams = useSearchParams();
   const emailIdFromUrl = searchParams.get(PARAMS_URL.EMAIL_ID);
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { notification } = App.useApp();
+
+  const { broadcastLogout } = useLogoutSync();
+
+  const { mutate: logout, isPending: isLoggingOut } = useMutationLogout({
+    onSuccess: () => {
+      notification.success({ message: 'Logged out successfully' });
+      dispatch(setAccessToken(null));
+      document.cookie =
+        'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+      broadcastLogout();
+      router.push('/login');
+    },
+    onError: (error) => {
+      console.error('Logout failed:', error);
+      notification.error({ message: 'Logout failed' });
+    },
+  });
+
+  const handleLogout = () => {
+    logout();
+  };
 
   const {
     mailboxes,
@@ -66,6 +94,8 @@ const InboxPage: React.FC = () => {
           setSearchText={setSearchText}
           setOpenComposeModal={setOpenComposeModal}
           handleSearch={handleSearch}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
         />
 
         <Layout>

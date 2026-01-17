@@ -5,6 +5,10 @@ import { LoadingSpin } from '@/components/LoadingSpin';
 import { SearchResultsView } from '@/features/search/components/SearchResultsView';
 import { SearchWithSuggestions } from '@/features/search/components/SearchWithSuggestions';
 import { useSearchWorkflows } from '@/features/search/hooks/useSearch';
+import { useLogoutSync } from '@/hooks/useLogoutSync';
+import { useMutationLogout } from '@/hooks/apis/authenAPIs';
+import { useAppDispatch } from '@/redux/hooks';
+import { setAccessToken } from '@/redux/slices/authSlice';
 import {
   AppstoreOutlined,
   SortDescendingOutlined,
@@ -13,8 +17,9 @@ import {
   PaperClipOutlined,
 } from '@ant-design/icons';
 import { DragDropContext } from '@hello-pangea/dnd';
-import { Layout, Select } from 'antd';
+import { App, Layout, Select } from 'antd';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { KanbanColumn } from './components/KanbanColumn';
 import { SettingsModal } from './components/SettingsModal';
 import { SnoozeModal } from './components/SnoozeModal';
@@ -37,12 +42,31 @@ const KanbanPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchPage, setSearchPage] = useState(1);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { notification } = App.useApp();
 
-  // Filter states
+  const { broadcastLogout } = useLogoutSync();
+  const { mutate: logout, isPending: isLoggingOut } = useMutationLogout({
+    onSuccess: () => {
+      notification.success({ message: 'Logged out successfully' });
+      dispatch(setAccessToken(null));
+      document.cookie =
+        'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax';
+      broadcastLogout();
+      router.push('/login');
+    },
+    onError: (error) => {
+      console.error('Logout failed:', error);
+      notification.error({ message: 'Logout failed' });
+    },
+  });
+
+  const handleLogout = () => {
+    logout();
+  };
+
   const [sortByDate, setSortByDate] = useState<string | undefined>(undefined);
-  // const [filterUnread, setFilterUnread] = useState(false);
-  // const [filterAttachments, setFilterAttachments] = useState(false);
-
   const { updateSearchQuery } = useControlParams();
 
   const {
@@ -208,6 +232,8 @@ const KanbanPage: React.FC = () => {
           <Action
             setSettingsModalOpen={setSettingsModalOpen}
             refreshKanban={refetch}
+            onLogout={handleLogout}
+            isLoggingOut={isLoggingOut}
           />
         </KanbanHeader>
         <Layout.Content>
@@ -234,6 +260,8 @@ const KanbanPage: React.FC = () => {
         <Action
           setSettingsModalOpen={setSettingsModalOpen}
           refreshKanban={refetch}
+          onLogout={handleLogout}
+          isLoggingOut={isLoggingOut}
         />
       </KanbanHeader>
 
