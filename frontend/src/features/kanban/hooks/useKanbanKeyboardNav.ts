@@ -1,38 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
+import { isEditableElement, focusSearchInput, scrollToDataEmail } from '@/helpers/keyboardNav.helper';
 import { IKanbanEmail } from '../interfaces/kanban.interface';
 
 interface KanbanNavColumn {
   id: string;
   emails: IKanbanEmail[];
 }
-
-const isEditableElement = (target: EventTarget | null): boolean => {
-  if (!(target instanceof HTMLElement)) return false;
-  const tagName = target.tagName;
-  return tagName === 'INPUT' || tagName === 'TEXTAREA' || target.isContentEditable;
-};
-
-const focusSearchInput = (inputId: string) => {
-  const directInput = document.getElementById(inputId) as HTMLInputElement | null;
-  if (directInput) {
-    directInput.focus();
-    return;
-  }
-
-  const fallbackInput = document.querySelector<HTMLInputElement>(
-    `[data-search-input-id="${inputId}"] input`,
-  );
-  fallbackInput?.focus();
-};
-
-const scrollToCard = (emailId: string) => {
-  const element = document.querySelector<HTMLElement>(
-    `[data-email-id="${emailId}"]`,
-  );
-  element?.scrollIntoView({ block: 'nearest' });
-};
 
 const findPosition = (
   columns: KanbanNavColumn[],
@@ -66,6 +41,13 @@ interface KanbanKeyboardNavOptions {
   enabled?: boolean;
 }
 
+/**
+ * Keyboard shortcuts (Kanban):
+ * - /: focus search input
+ * - ArrowUp/ArrowDown: move within column
+ * - ArrowLeft/ArrowRight: move across columns
+ * - Enter: open Gmail for selected card
+ */
 export const useKanbanKeyboardNav = ({
   columns,
   selectedCardId,
@@ -110,7 +92,7 @@ export const useKanbanKeyboardNav = ({
         const nextEmail = columnEmails[nextIndex];
         if (nextEmail) {
           onSelectCard(nextEmail.id);
-          scrollToCard(nextEmail.id);
+          scrollToDataEmail(nextEmail.id);
         }
         return;
       }
@@ -140,7 +122,7 @@ export const useKanbanKeyboardNav = ({
         const nextEmail = nextColumn[nextRowIndex];
         if (nextEmail) {
           onSelectCard(nextEmail.id);
-          scrollToCard(nextEmail.id);
+          scrollToDataEmail(nextEmail.id);
         }
         return;
       }
@@ -150,7 +132,6 @@ export const useKanbanKeyboardNav = ({
         if (currentPosition) {
           const email = columns[currentPosition.colIndex].emails[currentPosition.rowIndex];
           if (email) {
-            onSelectCard(email.id);
             onOpenGmail(email.id);
             return;
           }
