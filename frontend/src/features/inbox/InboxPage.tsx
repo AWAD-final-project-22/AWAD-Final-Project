@@ -12,6 +12,7 @@ import { EmailListPanel } from './components/EmailListPanel';
 import { MobileHeaderBar } from './components/MobileHeaderBar';
 import { Sidebar } from './components/SideBar';
 import { useInbox } from './hooks/useInbox';
+import { useInboxKeyboardNav } from './hooks/useInboxKeyboardNav';
 import { DivEmail, StyledLayout } from './styles/InboxPage.style';
 import { PARAMS_URL } from '@/constants/params.constant';
 
@@ -33,6 +34,7 @@ const InboxPage: React.FC = () => {
     setCollapsed,
     selectedMailbox,
     setSelectedMailbox,
+    selectedEmail,
     searchText,
     setSearchText,
     showEmailList,
@@ -54,6 +56,16 @@ const InboxPage: React.FC = () => {
     emails,
     handleDeleteEmail,
   } = useInbox({ isMobile, mailID: emailIdFromUrl || undefined });
+
+  useInboxKeyboardNav({
+    emails: filteredEmails,
+    selectedEmailId: selectedEmail,
+    onSelectEmail: handleEmailClick,
+    isMobile,
+    showEmailDetail,
+    onBackToList: handleBackToList,
+    searchInputId: 'inbox-search-input',
+  });
 
   return (
     <>

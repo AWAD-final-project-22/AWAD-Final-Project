@@ -94,6 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClear={() => setSearchText('')}
           style={{ marginBottom: '16px' }}
           allowClear
+          inputId='inbox-search-input'
         />
       </div>
       <Menu
