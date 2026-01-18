@@ -5,6 +5,7 @@ import { WorkflowStatus } from '@prisma/client';
 import { IGmailService } from '../../application/ports/gmail.port';
 import type { IAiSummaryPort } from '../../application/ports/ai-summary.port';
 import { GmailTokenService } from './gmail-token.service';
+import { SummaryQueue } from '../queues/summary.queue';
 
 @Injectable()
 export class EmailProcessorService {
@@ -20,6 +21,8 @@ export class EmailProcessorService {
 
     @Inject('IAiSummaryPort')
     private readonly aiSummaryPort: IAiSummaryPort,
+    
+    private readonly summaryQueue: SummaryQueue,
   ) {}
 
   async processGmailEmail(
@@ -41,7 +44,7 @@ export class EmailProcessorService {
       return existingWorkflow;
     }
 
-    this.logger.log(`[Email ${gmailMessageId}] ${existingWorkflow ? 'Found in DB but aiSummary lỗi, sẽ summary lại' : 'Not in DB, fetching full email'}`);
+    this.logger.log(`[Email ${gmailMessageId}] ${existingWorkflow ? 'Found in DB but aiSummary invalid, will queue for re-processing' : 'Not in DB, fetching full email'}`);
 
     const accessToken = await this.gmailTokenService.getAccessToken(userId);
     const fullEmail = await this.gmailService.getMessage(accessToken, 'me', gmailMessageId);
@@ -51,33 +54,16 @@ export class EmailProcessorService {
     const from = headers.find((h: any) => h.name.toLowerCase() === 'from')?.value || 'unknown@example.com';
     const date = headers.find((h: any) => h.name.toLowerCase() === 'date')?.value;
 
-    let body = fullEmail.snippet || '';
-    if (fullEmail.payload?.body?.data) {
-      body = Buffer.from(fullEmail.payload.body.data, 'base64').toString('utf-8');
-    } else if (fullEmail.payload?.parts) {
-      const textPart = fullEmail.payload.parts.find((p: any) => p.mimeType === 'text/plain');
-      if (textPart?.body?.data) {
-        body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
-      }
-    }
-
     const hasAttachment = this.hasAttachment(fullEmail.payload);
-
-    this.logger.log(`[Email ${gmailMessageId}] Calling AI summarize`);
-    const { summary, urgencyScore } = await this.aiSummaryPort.summarizeEmail(
-      body || fullEmail.snippet || '',
-      subject,
-    );
+    const isRead = !(fullEmail.labelIds?.includes('UNREAD') ?? false);
 
     let newWorkflow;
     if (existingWorkflow) {
-      newWorkflow = await this.workflowRepository.updateAiSummary(
-        existingWorkflow.id,
-        summary,
-        urgencyScore,
-      );
-      this.logger.log(`[Email ${gmailMessageId}] Updated aiSummary in DB`);
+      // If workflow exists but has invalid summary, just queue it for re-processing
+      newWorkflow = existingWorkflow;
+      this.logger.log(`[Email ${gmailMessageId}] Existing workflow found, will queue for AI summary`);
     } else {
+      // Create new workflow WITHOUT AI summary (will be processed asynchronously)
       newWorkflow = await this.workflowRepository.create({
         userId,
         gmailMessageId,
@@ -86,13 +72,26 @@ export class EmailProcessorService {
         date: new Date(date || Date.now()),
         snippet: fullEmail.snippet || '',
         hasAttachment: hasAttachment,
+        isRead: isRead,
         status: WorkflowStatus.INBOX,
         priority: 0,
-        aiSummary: summary,
-        urgencyScore,
+        aiSummary: undefined, 
+        urgencyScore: undefined,
       });
-      this.logger.log(`[Email ${gmailMessageId}] Saved to DB`);
+      this.logger.log(`[Email ${gmailMessageId}] Saved to DB (AI summary pending)`);
     }
+
+    // Queue AI summary processing (async)
+    try {
+      await this.summaryQueue.addBatchJob({
+        emailIds: [gmailMessageId],
+        userId,
+      });
+      this.logger.log(`[Email ${gmailMessageId}] Queued for AI summary processing`);
+    } catch (error) {
+      this.logger.error(`[Email ${gmailMessageId}] Failed to queue AI summary job:`, error);
+    }
+
     return newWorkflow;
   }
 
@@ -129,67 +128,56 @@ export class EmailProcessorService {
       }
     }
 
-    const batchInput = fullEmails.map(({ messageId, fullEmail }) => {
-      const headers = fullEmail.payload?.headers || [];
-      const subject = headers.find((h: any) => h.name.toLowerCase() === 'subject')?.value || '(No Subject)';
-      let body = fullEmail.snippet || '';
-      if (fullEmail.payload?.body?.data) {
-        body = Buffer.from(fullEmail.payload.body.data, 'base64').toString('utf-8');
-      } else if (fullEmail.payload?.parts) {
-        const textPart = fullEmail.payload.parts.find((p: any) => p.mimeType === 'text/plain');
-        if (textPart?.body?.data) {
-          body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
-        }
-      }
-      return { id: messageId, subject, body };
-    });
+    // Save emails to database immediately WITHOUT AI summary (async processing)
+    const newWorkflows: EmailWorkflowEntity[] = [];
+    for (const { messageId, fullEmail } of fullEmails) {
+      try {
+        const headers = fullEmail.payload?.headers || [];
+        const subject = headers.find((h: any) => h.name.toLowerCase() === 'subject')?.value || '(No Subject)';
+        const from = headers.find((h: any) => h.name.toLowerCase() === 'from')?.value || 'unknown@example.com';
+        const date = headers.find((h: any) => h.name.toLowerCase() === 'date')?.value;
 
-    if (batchInput.length > 0) {
-      this.logger.log(`[Batch] Calling AI summarize for ${batchInput.length} emails...`);
-      const aiResults = await this.aiSummaryPort.summarizeEmailBatch(batchInput);
+        const hasAttachment = this.hasAttachment(fullEmail.payload);
+        const isRead = !(fullEmail.labelIds?.includes('UNREAD') ?? false);
 
-      for (const { messageId, fullEmail } of fullEmails) {
-        try {
-          const headers = fullEmail.payload?.headers || [];
-          const subject = headers.find((h: any) => h.name.toLowerCase() === 'subject')?.value || '(No Subject)';
-          const from = headers.find((h: any) => h.name.toLowerCase() === 'from')?.value || 'unknown@example.com';
-          const date = headers.find((h: any) => h.name.toLowerCase() === 'date')?.value;
-          let body = fullEmail.snippet || '';
-          if (fullEmail.payload?.body?.data) {
-            body = Buffer.from(fullEmail.payload.body.data, 'base64').toString('utf-8');
-          } else if (fullEmail.payload?.parts) {
-            const textPart = fullEmail.payload.parts.find((p: any) => p.mimeType === 'text/plain');
-            if (textPart?.body?.data) {
-              body = Buffer.from(textPart.body.data, 'base64').toString('utf-8');
-            }
-          }
-
-          const hasAttachment = this.hasAttachment(fullEmail.payload);
-          // Check if email is read: if labelIds includes 'UNREAD', then isRead = false
-          const isRead = !(fullEmail.labelIds?.includes('UNREAD') ?? false);
-
-          const aiResult = aiResults[messageId] || { summary: 'AI summarization failed', urgencyScore: 0.5 };
-          const newWorkflow = await this.workflowRepository.create({
-            userId,
-            gmailMessageId: messageId,
-            subject,
-            from,
-            date: new Date(date || Date.now()),
-            snippet: fullEmail.snippet || '',
-            hasAttachment: hasAttachment,
-            isRead: isRead,
-            status: WorkflowStatus.INBOX,
-            priority: 0,
-            aiSummary: aiResult.summary,
-            urgencyScore: aiResult.urgencyScore,
-          });
-          this.logger.log(`[Batch] Saved email ${messageId} to DB`);
-          results.push(newWorkflow);
-        } catch (error) {
-          this.logger.error(`[Batch] Failed to save email ${messageId}:`, error);
-        }
+        // Save email WITHOUT AI summary (will be processed asynchronously)
+        const newWorkflow = await this.workflowRepository.create({
+          userId,
+          gmailMessageId: messageId,
+          subject,
+          from,
+          date: new Date(date || Date.now()),
+          snippet: fullEmail.snippet || '',
+          hasAttachment: hasAttachment,
+          isRead: isRead,
+          status: WorkflowStatus.INBOX,
+          priority: 0,
+          aiSummary: undefined, 
+          urgencyScore: undefined,
+        });
+        
+        this.logger.log(`[Batch] Saved email ${messageId} to DB (AI summary pending)`);
+        results.push(newWorkflow);
+        newWorkflows.push(newWorkflow);
+      } catch (error) {
+        this.logger.error(`[Batch] Failed to save email ${messageId}:`, error);
       }
     }
+
+    // Queue AI summary processing for new emails (async)
+    if (newWorkflows.length > 0) {
+      const emailIds = newWorkflows.map(w => w.gmailMessageId);
+      try {
+        await this.summaryQueue.addBatchJob({
+          emailIds,
+          userId,
+        });
+        this.logger.log(`[Batch] Queued ${emailIds.length} emails for AI summary processing`);
+      } catch (error) {
+        this.logger.error(`[Batch] Failed to queue AI summary jobs:`, error);
+      }
+    }
+
     return results;
   }
 

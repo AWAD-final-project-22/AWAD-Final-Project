@@ -23,26 +23,6 @@ interface MulterFile {
   buffer: Buffer;
   size: number;
 }
-
-interface UploadedFileFields {
-  files?: MulterFile[];
-}
-
-interface SendEmailFormData {
-  to: string | string[];
-  cc?: string | string[];
-  bcc?: string | string[];
-  subject: string;
-  body: string;
-}
-
-interface ReplyEmailFormData {
-  to?: string | string[];
-  cc?: string | string[];
-  bcc?: string | string[];
-  body: string;
-  includeOriginal?: string | boolean;
-}
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import {
   ApiGetMailboxes,
@@ -65,8 +45,6 @@ import { ModifyEmailUseCase } from '../../application/use-cases/gmail/modify-ema
 import { GetAttachmentUseCase } from '../../application/use-cases/gmail/get-attachment.use-case';
 import { SyncEmailsUseCase } from '../../application/use-cases/gmail/sync-emails.use-case';
 import { DeleteEmailUseCase } from '../../application/use-cases/gmail/delete-email.use-case';
-import { SendEmailDto } from '../dtos/request/send-email.dto';
-import { ReplyEmailDto } from '../dtos/request/reply-email.dto';
 import { ModifyEmailDto } from '../dtos/request/modify-email.dto';
 import { SyncEmailsDto } from '../dtos/request/sync-emails.dto';
 import { SyncEmailsResponseDto } from '../dtos/response/sync-emails.response.dto';
@@ -106,16 +84,27 @@ export class GmailController {
     @Req() req: any, 
     @Param('mailboxId') mailboxId: string,
     @Query('limit') limit?: string,
-    @Query('pageToken') pageToken?: string,
+    @Query('offset') offset?: string,
+    @Query('sortBy') sortBy?: 'date_newest' | 'date_oldest',
+    @Query('unreadOnly') unreadOnly?: string,
+    @Query('attachmentsOnly') attachmentsOnly?: string,
   ) {
     const mbId = mailboxId || 'inbox';
     const limitNum = limit ? parseInt(limit, 10) : 20;
+    const offsetNum = offset ? parseInt(offset, 10) : 0;
+
+    const filterOptions = {
+      sortBy: sortBy || 'date_newest',
+      unreadOnly: unreadOnly === 'true',
+      attachmentsOnly: attachmentsOnly === 'true',
+    };
 
     return await this.getEmailsUseCase.execute(
       req.user.sub,
       mbId,
       limitNum,
-      pageToken,
+      offsetNum,
+      filterOptions,
     );
   }
 
