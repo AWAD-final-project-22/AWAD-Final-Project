@@ -3,13 +3,6 @@ import type { IAiSummaryPort } from '../../application/ports/ai-summary.port';
 import type { IEmailWorkflowRepository } from '../../domain/repositories/IEmailWorkFflowRepository';
 import { EmailWorkflowEntity } from '../../domain/entities/emaiWorkflow.entity';
 
-export enum SummaryStatus {
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING', 
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-}
-
 @Injectable()
 export class SummaryProcessorService {
   private readonly logger = new Logger(SummaryProcessorService.name);
@@ -28,9 +21,18 @@ export class SummaryProcessorService {
   async processBatch(emailIds: string[], userId: string): Promise<void> {
     this.logger.log(`Processing summary batch for ${emailIds.length} emails (userId: ${userId})`);
 
+    // Batch fetch all workflows at once instead of sequential calls
+    const allWorkflows = await Promise.all(
+      emailIds.map(emailId => 
+        this.workflowRepository.findByGmailMessageId(userId, emailId)
+      )
+    );
+
     const workflows: EmailWorkflowEntity[] = [];
-    for (const emailId of emailIds) {
-      const workflow = await this.workflowRepository.findByGmailMessageId(userId, emailId);
+    for (let i = 0; i < allWorkflows.length; i++) {
+      const workflow = allWorkflows[i];
+      const emailId = emailIds[i];
+      
       if (workflow) {
         const needsSummary = 
           !workflow.aiSummary || 
@@ -90,13 +92,15 @@ export class SummaryProcessorService {
         }
       }
 
-      for (const update of updates) {
-        await this.workflowRepository.updateAiSummary(
+      // Batch update all summaries in parallel instead of sequential
+      const updatePromises = updates.map(update =>
+        this.workflowRepository.updateAiSummary(
           update.id,
           update.summary,
           update.urgencyScore,
-        );
-      }
+        )
+      );
+      await Promise.all(updatePromises);
 
       const successCount = updates.filter(u => !u.summary.includes('failed')).length;
       const failCount = updates.length - successCount;
@@ -125,10 +129,17 @@ export class SummaryProcessorService {
 
   async findPendingSummaries(userId: string, limit: number = 50): Promise<string[]> {
     try {
-      const pendingEmbeddings = await this.workflowRepository.findPendingEmbeddings(userId, limit * 2);
+      // Find workflows that need AI summary processing
+      const workflows = await this.workflowRepository.findByUserAndStatusWithPagination(
+        userId,
+        'INBOX' as any, // Cast to avoid type issues
+        limit,
+        0,
+        {}
+      );
 
       const pendingWorkflows: EmailWorkflowEntity[] = [];
-      for (const workflow of pendingEmbeddings) {
+      for (const workflow of workflows) {
         const needsSummary = 
           !workflow.aiSummary || 
           workflow.aiSummary.trim() === '' ||

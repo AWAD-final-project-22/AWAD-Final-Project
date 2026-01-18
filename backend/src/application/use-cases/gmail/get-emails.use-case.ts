@@ -31,7 +31,7 @@ export class GetEmailsUseCase extends BaseGmailUseCase {
     const labelId = SYSTEM_LABELS_MAP[normalizedId] || mailboxId;
 
     // Build Gmail search query based on filters
-    let query = `in:${labelId.toLowerCase()}`;
+    let query = `in:${labelId}`; // Keep original case for Gmail API
     
     if (filterOptions?.unreadOnly) {
       query += ' is:unread';

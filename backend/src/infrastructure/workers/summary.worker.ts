@@ -1,11 +1,12 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Worker } from 'bullmq';
 import { SummaryQueue } from '../queues/summary.queue';
 import { SummaryProcessorService } from '../services/summary-processor.service';
 
 @Injectable()
 export class SummaryWorker implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(SummaryWorker.name);
-  private worker: any;
+  private worker: Worker | undefined;
 
   constructor(
     private summaryQueue: SummaryQueue,

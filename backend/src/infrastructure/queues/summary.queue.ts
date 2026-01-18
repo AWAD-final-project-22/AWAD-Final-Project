@@ -50,9 +50,10 @@ export class SummaryQueue implements OnModuleInit {
   }
 
   async addBatchJob(data: SummaryJobData, priority?: number) {
+    const jobId = `summary-${data.userId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     return this.queue.add('process-summary-batch', data as any, {
       priority: priority || 0,
-      jobId: `summary-${data.userId}-${Date.now()}`,
+      jobId,
     });
   }
 
