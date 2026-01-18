@@ -11,6 +11,12 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
   constructor(private prisma: PrismaService) {}
 
   private toEntity(workflow: any): EmailWorkflowEntity {
+    // Check if email needs AI summary processing
+    const needsAiSummary = 
+      !workflow.aiSummary || 
+      workflow.aiSummary.trim() === '' ||
+      workflow.aiSummary.includes('AI summarization failed');
+
     return new EmailWorkflowEntity({
       ...workflow,
       snippet: workflow.snippet ?? undefined,
@@ -18,8 +24,8 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
       isRead: workflow.isRead ?? false,
       deadline: workflow.deadline ?? undefined,
       snoozedUntil: workflow.snoozedUntil ?? undefined,
-      aiSummary: workflow.aiSummary ?? undefined,
-      urgencyScore: workflow.urgencyScore ?? undefined,
+      aiSummary: needsAiSummary ? 'AI summary is being processed...' : workflow.aiSummary,
+      urgencyScore: workflow.urgencyScore ?? 0.5,
       embedding: workflow.embedding ? JSON.parse(JSON.stringify(workflow.embedding)) : undefined,
       embeddingStatus: workflow.embeddingStatus ?? undefined,
     });

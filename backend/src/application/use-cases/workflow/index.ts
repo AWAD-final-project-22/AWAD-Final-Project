@@ -6,6 +6,7 @@ import type { IEmailWorkflowRepository } from '../../../domain/repositories/IEma
 import { InboxWorkflowService } from '../../../infrastructure/services/inbox-workflow.service';
 import { PrismaService } from '../../../infrastructure/database/prisma.service';
 import { EmbeddingQueueService } from '../../../infrastructure/services/embedding-queue.service';
+import { SummaryQueue } from '../../../infrastructure/queues/summary.queue';
 import { IEmbeddingPort } from '../../ports/embedding.port';
 
 export const WorkflowUseCaseProviders = [
@@ -15,8 +16,14 @@ export const WorkflowUseCaseProviders = [
       workflowRepo: IEmailWorkflowRepository,
       inboxWorkflowService: InboxWorkflowService,
       embeddingQueueService?: EmbeddingQueueService,
-    ) => new GetWorkflowsUseCase(workflowRepo, inboxWorkflowService, embeddingQueueService),
-    inject: ['IEmailWorkflowRepository', InboxWorkflowService, { token: EmbeddingQueueService, optional: true }],
+      summaryQueue?: SummaryQueue,
+    ) => new GetWorkflowsUseCase(workflowRepo, inboxWorkflowService, embeddingQueueService, summaryQueue),
+    inject: [
+      'IEmailWorkflowRepository', 
+      InboxWorkflowService, 
+      { token: EmbeddingQueueService, optional: true },
+      { token: SummaryQueue, optional: true }
+    ],
   },
   {
     provide: SearchWorkflowsUseCase,

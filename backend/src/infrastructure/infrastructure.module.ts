@@ -31,6 +31,9 @@ import { EmbeddingQueue } from './queues/embedding.queue';
 import { EmbeddingProcessorService } from './services/embedding-processor.service';
 import { EmbeddingWorker } from './workers/embedding.worker';
 import { EmbeddingQueueService } from './services/embedding-queue.service';
+import { SummaryQueue } from './queues/summary.queue';
+import { SummaryProcessorService } from './services/summary-processor.service';
+import { SummaryWorker } from './workers/summary.worker';
 
 @Module({
   imports: [
@@ -98,6 +101,10 @@ import { EmbeddingQueueService } from './services/embedding-queue.service';
       useFactory: (embeddingQueue?: EmbeddingQueue) => new EmbeddingQueueService(embeddingQueue),
       inject: [{ token: EmbeddingQueue, optional: true }],
     },
+    // Summary Worker System
+    SummaryQueue,
+    SummaryProcessorService,
+    SummaryWorker,
   ],
   exports: [
     PrismaService,
@@ -120,6 +127,10 @@ import { EmbeddingQueueService } from './services/embedding-queue.service';
     EmbeddingProcessorService,
     EmbeddingWorker,
     EmbeddingQueueService,
+    // Summary Worker System
+    SummaryQueue,
+    SummaryProcessorService,
+    SummaryWorker,
     JwtModule,
   ],
 })

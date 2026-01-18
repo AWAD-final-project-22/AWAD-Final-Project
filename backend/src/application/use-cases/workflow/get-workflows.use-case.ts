@@ -3,6 +3,7 @@ import type { IEmailWorkflowRepository } from '../../../domain/repositories/IEma
 import { EmailWorkflowEntity } from '../../../domain/entities/emaiWorkflow.entity';
 import { InboxWorkflowService } from '../../../infrastructure/services/inbox-workflow.service';
 import { EmbeddingQueueService } from '../../../infrastructure/services/embedding-queue.service';
+import { SummaryQueue } from '../../../infrastructure/queues/summary.queue';
 import { Optional } from '@nestjs/common';
 
 export interface GetWorkflowsInput {
@@ -37,13 +38,14 @@ export class GetWorkflowsUseCase {
     private readonly workflowRepository: IEmailWorkflowRepository,
     private readonly inboxWorkflowService: InboxWorkflowService,
     @Optional() private readonly embeddingQueueService?: EmbeddingQueueService,
+    @Optional() private readonly summaryQueue?: SummaryQueue,
   ) {}
 
   async execute(input: GetWorkflowsInput): Promise<GetWorkflowsOutput> {
     const { userId, status, limit, offset, sortBy, unreadOnly, attachmentsOnly } = input;
 
     const filterOptions = {
-      sortBy,
+      sortBy: sortBy || 'date_newest', // Default to newest first
       unreadOnly,
       attachmentsOnly,
     };
@@ -81,6 +83,21 @@ export class GetWorkflowsUseCase {
         });
     }
 
+    if (this.summaryQueue) {
+      const emailsNeedingSummary = workflows
+        .filter(w => w.aiSummary === 'AI summary is being processed...')
+        .map(w => w.gmailMessageId);
+      
+      if (emailsNeedingSummary.length > 0) {
+        this.summaryQueue.addBatchJob({
+          emailIds: emailsNeedingSummary,
+          userId,
+        }).catch((err) => {
+          console.error('Failed to queue AI summary jobs:', err);
+        });
+      }
+    }
+
     const response: GetWorkflowsOutput = {
       data: workflows,
       pagination: {
@@ -91,12 +108,10 @@ export class GetWorkflowsUseCase {
       },
     };
 
-    // Only include sort if provided
     if (sortBy) {
       response.sort = { sortBy };
     }
 
-    // Only include filters if at least one is provided
     if (unreadOnly !== undefined || attachmentsOnly !== undefined) {
       response.filters = {};
       if (unreadOnly !== undefined) {

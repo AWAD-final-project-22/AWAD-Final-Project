@@ -66,8 +66,8 @@ export const ApiGetEmailDetail = () =>
 export const ApiGetEmails = () =>
   applyDecorators(
     ApiOperation({
-      summary: 'Get emails from a mailbox',
-      description: 'Retrieve paginated list of emails from a specific mailbox/label using Gmail API pageToken',
+      summary: 'Get emails from a mailbox with filtering and sorting',
+      description: 'Retrieve paginated list of emails from a specific mailbox/label with filtering and sorting options',
     }),
     ApiParam({
       name: 'mailboxId',
@@ -81,14 +81,35 @@ export const ApiGetEmails = () =>
       example: 20,
     }),
     ApiQuery({
-      name: 'pageToken',
+      name: 'offset',
       required: false,
-      description: 'Page token from previous response for next page',
-      example: 'CAMSDCIQGiYKABIAGAEgACgA',
+      description: 'Number of emails to skip (for pagination)',
+      example: 0,
+    }),
+    ApiQuery({
+      name: 'sortBy',
+      required: false,
+      description: 'Sort emails by date',
+      enum: ['date_newest', 'date_oldest'],
+      example: 'date_newest',
+    }),
+    ApiQuery({
+      name: 'unreadOnly',
+      required: false,
+      description: 'Show only unread emails',
+      type: 'boolean',
+      example: false,
+    }),
+    ApiQuery({
+      name: 'attachmentsOnly',
+      required: false,
+      description: 'Show only emails with attachments',
+      type: 'boolean',
+      example: false,
     }),
     ApiResponse({
       status: 200,
-      description: 'List of emails with pagination info',
+      description: 'List of emails with pagination info and applied filters',
       schema: {
         example: {
           emails: [
@@ -100,11 +121,18 @@ export const ApiGetEmails = () =>
               snippet: 'Email preview text...',
               isRead: true,
               isStarred: false,
+              hasAttachment: true,
             },
           ],
-          nextPageToken: 'CAMSDCIQGiYKABIAGAEgACgA',
           limit: 20,
+          offset: 0,
           total: 150,
+          hasMore: true,
+          filters: {
+            sortBy: 'date_newest',
+            unreadOnly: false,
+            attachmentsOnly: false,
+          },
         },
       },
     }),
