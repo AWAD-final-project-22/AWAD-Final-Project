@@ -13,12 +13,17 @@ export class SummaryQueue implements OnModuleInit {
   private readonly logger = new Logger(SummaryQueue.name);
   private queue: Queue;
   private queueEvents: QueueEvents;
-  private readonly CONCURRENCY = 2; // Conservative for demo
+  private readonly CONCURRENCY: number;
+  private readonly RATE_LIMIT: number;
 
   constructor(
     private redisService: RedisService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    // Use environment variables with fallback defaults
+    this.CONCURRENCY = this.configService.get<number>('SUMMARY_CONCURRENCY') || 2;
+    this.RATE_LIMIT = this.configService.get<number>('SUMMARY_RATE_LIMIT') || 5;
+  }
 
   async onModuleInit() {
     const connection = this.redisService.getConnectionOptions();
@@ -70,7 +75,7 @@ export class SummaryQueue implements OnModuleInit {
         connection: connection as any, 
         concurrency: this.CONCURRENCY,
         limiter: {
-          max: 5, // 5 jobs per second - conservative for demo
+          max: this.RATE_LIMIT, // Use config value
           duration: 1000, 
         },
       },

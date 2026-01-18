@@ -90,6 +90,16 @@ export class EmailProcessorService {
       this.logger.log(`[Email ${gmailMessageId}] Queued for AI summary processing`);
     } catch (error) {
       this.logger.error(`[Email ${gmailMessageId}] Failed to queue AI summary job:`, error);
+      // Update workflow to indicate queue failure so it can be retried later
+      try {
+        await this.workflowRepository.updateAiSummary(
+          newWorkflow.id,
+          'AI summary queue failed - will retry',
+          0.5
+        );
+      } catch (updateError) {
+        this.logger.error(`[Email ${gmailMessageId}] Failed to update workflow after queue failure:`, updateError);
+      }
     }
 
     return newWorkflow;

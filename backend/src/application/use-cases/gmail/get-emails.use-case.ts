@@ -30,22 +30,23 @@ export class GetEmailsUseCase extends BaseGmailUseCase {
     const normalizedId = mailboxId.toLowerCase();
     const labelId = SYSTEM_LABELS_MAP[normalizedId] || mailboxId;
 
-    // Build Gmail search query based on filters
-    let query = `in:${labelId}`; // Keep original case for Gmail API
+    // Build Gmail search query based on filters (without label - use labelIds instead)
+    let query = '';
     
     if (filterOptions?.unreadOnly) {
-      query += ' is:unread';
+      query += 'is:unread';
     }
     
     if (filterOptions?.attachmentsOnly) {
-      query += ' has:attachment';
+      query += query ? ' has:attachment' : 'has:attachment';
     }
 
     const fetchLimit = Math.min(limit + offset, 500);
 
     const params: ListMessagesParams = {
       userId: 'me',
-      query: query, 
+      labelIds: [labelId], // Use labelIds instead of query for label filtering
+      query: query || undefined, // Only include query if we have filters
       maxResults: fetchLimit,
     };
 
