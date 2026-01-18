@@ -52,6 +52,7 @@ interface SearchWithSuggestionsProps {
   debounceMs?: number;
   maxSuggestions?: number;
   updateParamsSearchEmail?: (value: string) => void;
+  inputId?: string;
 }
 
 export const SearchWithSuggestions: React.FC<SearchWithSuggestionsProps> = ({
@@ -65,6 +66,7 @@ export const SearchWithSuggestions: React.FC<SearchWithSuggestionsProps> = ({
   debounceMs = 300,
   maxSuggestions = 5,
   updateParamsSearchEmail,
+  inputId,
 }) => {
   const [searchValue, setSearchValue] = useState(controlledValue || '');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -158,10 +160,12 @@ export const SearchWithSuggestions: React.FC<SearchWithSuggestionsProps> = ({
       onChange={(value: unknown) => handleInputChange(String(value))}
       notFoundContent={isLoading ? 'Loading...' : null}
       style={style}
+      data-search-input-id={inputId}
     >
       <Search
         placeholder={placeholder}
         allowClear={allowClear}
+        id={inputId}
         onSearch={handleSearch}
         onChange={(e) => {
           if (e.target.value === '' && allowClear) {

@@ -21,6 +21,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { SnoozeModal } from './components/SnoozeModal';
 import { SNOOZED_COLUMN_ID } from './constants/kanban.constant';
 import { useKanban } from './hooks/useKanban';
+import { useKanbanKeyboardNav } from './hooks/useKanbanKeyboardNav';
 
 import { PARAMS_URL } from '@/constants/params.constant';
 import { useControlParams } from '@/hooks/useControlParams';
@@ -38,6 +39,7 @@ const KanbanPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchPage, setSearchPage] = useState(1);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
   const { handleLogout, isLoggingOut } = useLogout();
 
@@ -119,6 +121,36 @@ const KanbanPage: React.FC = () => {
   };
 
   useEffect(() => clearParams(), []);
+  useEffect(() => {
+    if (searchQuery) {
+      setSelectedCardId(null);
+    }
+  }, [searchQuery]);
+
+  const navColumns = React.useMemo(() => {
+    const baseColumns = columns.map((col) => ({
+      id: col.id,
+      emails: col.emails,
+    }));
+    if (snoozedEmails.length > 0) {
+      baseColumns.push({
+        id: SNOOZED_COLUMN_ID,
+        emails: snoozedEmails,
+      });
+    }
+    return baseColumns;
+  }, [columns, snoozedEmails]);
+
+  useKanbanKeyboardNav({
+    columns: navColumns,
+    selectedCardId,
+    onSelectCard: setSelectedCardId,
+    onOpenGmail: (emailId: string) => {
+      window.open(`https://mail.google.com/mail/u/0/#inbox/${emailId}`, '_blank');
+    },
+    searchInputId: 'kanban-search-input',
+    enabled: !searchQuery && !snoozeModalOpen && !settingsModalOpen,
+  });
 
   const renderSearchInput = () => (
     <SearchInput>
@@ -134,6 +166,7 @@ const KanbanPage: React.FC = () => {
         }
         allowClear
         style={{ width: '100%' }}
+        inputId='kanban-search-input'
       />
 
       <FilterItem>
@@ -268,6 +301,8 @@ const KanbanPage: React.FC = () => {
                   onSnooze={openSnoozeModal}
                   onUnsnooze={handleUnsnooze}
                   onPriorityChange={handleUpdatePriority}
+                  selectedCardId={selectedCardId}
+                  onSelectCard={setSelectedCardId}
                 />
               ))}
               {snoozedEmails.length > 0 && (
@@ -278,6 +313,8 @@ const KanbanPage: React.FC = () => {
                   onSnooze={openSnoozeModal}
                   onUnsnooze={handleUnsnooze}
                   onPriorityChange={handleUpdatePriority}
+                  selectedCardId={selectedCardId}
+                  onSelectCard={setSelectedCardId}
                 />
               )}
             </BoardContainer>

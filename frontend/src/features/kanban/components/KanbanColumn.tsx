@@ -19,6 +19,8 @@ interface KanbanColumnProps {
   onSnooze: (emailId: string) => void;
   onUnsnooze: (emailId: string) => void;
   onPriorityChange?: (workflowId: string, priority: number) => void;
+  selectedCardId?: string | null;
+  onSelectCard?: (emailId: string) => void;
 }
 
 export const KanbanColumn: React.FC<KanbanColumnProps> = ({
@@ -28,6 +30,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   onSnooze,
   onUnsnooze,
   onPriorityChange,
+  selectedCardId,
+  onSelectCard,
 }) => {
   return (
     <Droppable droppableId={id}>
@@ -49,6 +53,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
                     <KanbanCard
                       email={email}
                       isDragging={dragSnapshot.isDragging}
+                      isSelected={selectedCardId === email.id}
+                      onSelect={() => onSelectCard?.(email.id)}
                       onSnooze={() => onSnooze(email.id)}
                       onUnsnooze={() => onUnsnooze(email.id)}
                       onPriorityChange={

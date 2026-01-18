@@ -120,19 +120,24 @@ export const ColumnContent = styled.div`
   }
 `;
 
-export const CardContainer = styled.div<{ $isDragging?: boolean }>`
+export const CardContainer = styled.div<{
+  $isDragging?: boolean;
+  $isSelected?: boolean;
+}>`
   background: #fff;
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: ${({ $isDragging }) =>
-    $isDragging
-      ? '0 8px 24px rgba(0, 0, 0, 0.15)'
-      : '0 2px 8px rgba(0, 0, 0, 0.06)'};
+  box-shadow: ${({ $isDragging, $isSelected }) => {
+    if ($isDragging) return '0 8px 24px rgba(0, 0, 0, 0.15)';
+    if ($isSelected) return '0 0 0 2px rgba(24, 144, 255, 0.25)';
+    return '0 2px 8px rgba(0, 0, 0, 0.06)';
+  }};
   cursor: grab;
   transition: all 0.2s ease;
   border: 1px solid
-    ${({ $isDragging }) => ($isDragging ? '#1890ff' : '#f0f0f0')};
+    ${({ $isDragging, $isSelected }) =>
+      $isDragging || $isSelected ? '#1890ff' : '#f0f0f0'};
 
   &:hover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);

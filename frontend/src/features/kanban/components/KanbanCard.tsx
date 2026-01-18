@@ -28,9 +28,11 @@ import {
 interface KanbanCardProps {
   email: IKanbanEmail;
   isDragging?: boolean;
+  isSelected?: boolean;
   onSnooze: () => void;
   onUnsnooze: () => void;
   onPriorityChange?: (priority: number) => void;
+  onSelect?: () => void;
 }
 
 const PRIORITY_OPTIONS = [
@@ -103,9 +105,11 @@ const formatSnoozeTime = (snoozedUntil: string): string => {
 export const KanbanCard: React.FC<KanbanCardProps> = ({
   email,
   isDragging = false,
+  isSelected = false,
   onSnooze,
   onUnsnooze,
   onPriorityChange,
+  onSelect,
 }) => {
   const senderName = getSenderName(email.sender);
   const initials = getInitials(email.sender);
@@ -135,7 +139,12 @@ export const KanbanCard: React.FC<KanbanCardProps> = ({
   const canChangePriority = email.workflowId && onPriorityChange;
 
   return (
-    <CardContainer $isDragging={isDragging}>
+    <CardContainer
+      $isDragging={isDragging}
+      $isSelected={isSelected}
+      data-email-id={email.id}
+      onClick={onSelect}
+    >
       <CardHeader>
         <SenderBadge>
           <SenderAvatar $color={avatarColor}>{initials}</SenderAvatar>
