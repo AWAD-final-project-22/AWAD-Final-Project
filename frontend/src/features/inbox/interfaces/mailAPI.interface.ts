@@ -67,3 +67,12 @@ export interface IReplyEmailParams {
   includeOriginal?: boolean;
   attachments?: IEmailAttachment[];
 }
+
+export interface IForwardEmailParams {
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  body: string;
+  includeOriginal?: boolean;
+  attachments?: IEmailAttachment[];
+}

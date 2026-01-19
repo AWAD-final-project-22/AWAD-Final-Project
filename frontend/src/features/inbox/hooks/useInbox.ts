@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   IEmail,
   IReplyEmailParams,
+  IForwardEmailParams,
   ISendMessageParams,
 } from '../interfaces/mailAPI.interface';
 import {
@@ -14,6 +15,7 @@ import {
   useGetMailBoxes,
   useMutationModifyEmailById,
   useMutationReplyEmailById,
+  useMutationForwardEmailById,
   useMutationSendEmail,
   useMutationDownloadAttachment,
   useMutationDeleteEmail,
@@ -86,6 +88,19 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
       },
       onError: (error) => {
         console.error('Reply Email Failed:', error);
+      },
+    });
+
+  const { mutateAsync: forwardEmail, isPending: isForwardEmailPending } =
+    useMutationForwardEmailById({
+      onSuccess: () => {
+        notification.success({
+          message: 'Forward Email Success',
+          description: 'Your email has been forwarded successfully.',
+        });
+      },
+      onError: (error) => {
+        console.error('Forward Email Failed:', error);
       },
     });
 
@@ -287,6 +302,18 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     }
   };
 
+  const handleForwardEmail = async (params: IForwardEmailParams) => {
+    try {
+      if (!selectedEmail) {
+        notification.error({ message: 'No email selected to forward' });
+        return;
+      }
+      await forwardEmail({ id: selectedEmail, params });
+    } catch (error) {
+      console.error('Forward Email Failed:', error);
+    }
+  };
+
   const handlePageChange = (value: number) => {
     updateSearchQuery({ [PARAMS_URL.PAGE]: value }, true);
   };
@@ -348,6 +375,9 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
     handleReplyEmail,
     isReplyEmailPending,
+
+    handleForwardEmail,
+    isForwardEmailPending,
 
     modifyEmail,
     isModifyEmailPending,

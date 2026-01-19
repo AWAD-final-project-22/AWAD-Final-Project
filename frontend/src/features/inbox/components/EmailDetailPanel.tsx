@@ -17,6 +17,7 @@ import { getFileIcon } from '../helpers/fileIcon.helper';
 import {
   IEmailDetail,
   IReplyEmailParams,
+  IForwardEmailParams,
   ISendMessageParams,
 } from '../interfaces/mailAPI.interface';
 import {
@@ -32,6 +33,7 @@ import {
   FileSize,
 } from '../styles/InboxPage.style';
 import { ReplyEmailModal } from './ReplyEmailModal';
+import { ForwardEmailModal } from './ForwardEmailModal';
 
 const { Title, Text } = Typography;
 
@@ -41,6 +43,8 @@ interface EmailDetailProps {
   isEmailDetailLoading: boolean;
   handleSendReply: (payload: ISendMessageParams) => void;
   isReplyEmailPending: boolean;
+  handleSendForward: (payload: ISendMessageParams) => void;
+  isForwardEmailPending: boolean;
   onDownloadAttachment: (
     messageId: string,
     attachmentId: string,
@@ -54,6 +58,8 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
   email,
   handleSendReply,
   isReplyEmailPending = false,
+  handleSendForward,
+  isForwardEmailPending = false,
   isEmailDetailLoading = false,
   onDownloadAttachment,
   handleDeleteEmail,
@@ -62,6 +68,10 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
   const [replyModalOpen, setReplyModalOpen] = useState(false);
   const [replyParams, setReplyParams] = useState<
     IReplyEmailParams | undefined
+  >();
+  const [forwardModalOpen, setForwardModalOpen] = useState(false);
+  const [forwardParams, setForwardParams] = useState<
+    IForwardEmailParams | undefined
   >();
 
   const handleReplyClick = () => {
@@ -78,6 +88,19 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
 
     setReplyParams(params);
     setReplyModalOpen(true);
+  };
+
+  const handleForwardClick = () => {
+    if (!email) return;
+
+    const params: IForwardEmailParams = {
+      to: [],
+      body: email.preview || '',
+      includeOriginal: true,
+    };
+
+    setForwardParams(params);
+    setForwardModalOpen(true);
   };
 
   const handleDownloadClick = (
@@ -139,7 +162,11 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
                       <Button type='text' icon={<StarOutlined />} />
                     </Tooltip>
                     <Tooltip title='Forward'>
-                      <Button type='text' icon={<ForwardOutlined />} />
+                      <Button 
+                        type='text' 
+                        icon={<ForwardOutlined />} 
+                        onClick={handleForwardClick}
+                      />
                     </Tooltip>
                     <Tooltip title='Reply'>
                       <Button
@@ -228,6 +255,15 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
             replyParams={replyParams}
             originalSubject={email.subject}
             isReplyEmailPending={isReplyEmailPending}
+          />
+
+          <ForwardEmailModal
+            open={forwardModalOpen}
+            onClose={() => setForwardModalOpen(false)}
+            onSend={handleSendForward}
+            forwardParams={forwardParams}
+            originalSubject={email.subject}
+            isForwardEmailPending={isForwardEmailPending}
           />
         </>
       ) : isEmailDetailLoading ? (
