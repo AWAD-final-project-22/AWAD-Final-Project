@@ -126,3 +126,54 @@ export function ApiUpdateWorkflowStatusDocs() {
     ApiResponse({ status: 404, description: 'Not Found - Workflow not found or not owned by user' })
   );
 }
+
+export function ApiUpdateWorkflowSnoozeDocs() {
+  return applyDecorators(
+    ApiOperation({ 
+      summary: 'Snooze workflow until specified date', 
+      description: 'Snooze workflow đến một thời điểm cụ thể. Status Kanban sẽ được giữ nguyên, chỉ set snoozedUntil.' 
+    }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        properties: {
+          snoozedUntil: {
+            type: 'string',
+            format: 'date-time',
+            example: '2025-01-25T10:00:00.000Z',
+            description: 'Ngày giờ kết thúc snooze (ISO 8601 format). Phải là thời điểm trong tương lai.',
+          },
+        },
+        required: ['snoozedUntil'],
+      },
+      examples: {
+        tomorrow: { 
+          summary: 'Snooze đến ngày mai', 
+          value: { snoozedUntil: '2025-01-21T09:00:00.000Z' } 
+        },
+        nextWeek: { 
+          summary: 'Snooze đến tuần sau', 
+          value: { snoozedUntil: '2025-01-27T09:00:00.000Z' } 
+        },
+      },
+    }),
+    ApiResponse({ 
+      status: 200, 
+      description: 'Workflow snoozed successfully', 
+      schema: { 
+        example: { 
+          success: true, 
+          data: { 
+            id: 'cm4h8x9z00001l408gq5c8h9j', 
+            status: 'IN_PROGRESS', // Status giữ nguyên
+            snoozedUntil: '2025-01-25T10:00:00.000Z',
+            updatedAt: '2025-01-20T10:30:00.000Z' 
+          } 
+        } 
+      } 
+    }),
+    ApiResponse({ status: 400, description: 'Bad Request - Invalid date format hoặc ngày trong quá khứ' }),
+    ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' }),
+    ApiResponse({ status: 404, description: 'Not Found - Workflow not found or not owned by user' })
+  );
+}

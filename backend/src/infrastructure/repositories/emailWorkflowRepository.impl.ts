@@ -85,8 +85,18 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
     userId: string,
     status: WorkflowStatus,
   ): Promise<EmailWorkflowEntity[]> {
+    const where: any = { userId };
+
+    // Snooze logic tương tự
+    if (status === WorkflowStatus.SNOOZED) {
+      where.snoozedUntil = { not: null };
+    } else {
+      where.status = status;
+      where.snoozedUntil = null;
+    }
+
     const workflows = await this.prisma.emailWorkflow.findMany({
-      where: { userId, status },
+      where,
       orderBy: [
         { priority: 'desc' },
         { urgencyScore: 'desc' },
@@ -101,8 +111,8 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
   ): Promise<EmailWorkflowEntity[]> {
     const workflows = await this.prisma.emailWorkflow.findMany({
       where: {
-        status: WorkflowStatus.SNOOZED,
         snoozedUntil: {
+          not: null,
           lte: now,
         },
       },
@@ -129,15 +139,19 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
 
   async updateSnooze(
     id: string,
-    snoozedUntil: Date,
+    snoozedUntil: Date | null,
   ): Promise<EmailWorkflowEntity> {
+    const updateData: any = {
+      snoozedUntil,
+      updatedAt: new Date(),
+    };
+
+    // KHÔNG thay đổi status - giữ nguyên status hiện tại
+    // Theo design: chỉ set/clear snoozedUntil, status Kanban giữ nguyên
+
     const workflow = await this.prisma.emailWorkflow.update({
       where: { id },
-      data: {
-        status: WorkflowStatus.SNOOZED,
-        snoozedUntil,
-        updatedAt: new Date(),
-      },
+      data: updateData,
     });
     return this.toEntity(workflow);
   }
@@ -233,7 +247,17 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
       attachmentsOnly?: boolean;
     },
   ): Promise<EmailWorkflowEntity[]> {
-    const where: any = { userId, status };
+    const where: any = { userId };
+
+    // Snooze logic: 
+    // - Nếu status = SNOOZED: chỉ lấy workflows có snoozedUntil không null
+    // - Nếu status khác: chỉ lấy workflows có snoozedUntil null VÀ status đúng
+    if (status === WorkflowStatus.SNOOZED) {
+      where.snoozedUntil = { not: null };
+    } else {
+      where.status = status;
+      where.snoozedUntil = null; // Chỉ lấy workflows không bị snooze
+    }
 
     // Apply filters
     const activeFilters: string[] = [];
@@ -257,6 +281,7 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
       `[GET WORKFLOWS] Query - userId: ${userId}, status: ${status}, ` +
       `limit: ${limit}, offset: ${offset}, ` +
       `${filterStatus} | ` +
+      `Snooze logic: ${status === WorkflowStatus.SNOOZED ? 'snoozedUntil NOT NULL' : 'snoozedUntil IS NULL'} | ` +
       `Request params: ${JSON.stringify({ unreadOnly: options?.unreadOnly, attachmentsOnly: options?.attachmentsOnly })}`
     );
 
@@ -308,7 +333,15 @@ export class EmailWorkflowRepositoryImpl implements IEmailWorkflowRepository {
       attachmentsOnly?: boolean;
     },
   ): Promise<number> {
-    const where: any = { userId, status };
+    const where: any = { userId };
+
+    // Snooze logic tương tự như findByUserAndStatusWithPagination
+    if (status === WorkflowStatus.SNOOZED) {
+      where.snoozedUntil = { not: null };
+    } else {
+      where.status = status;
+      where.snoozedUntil = null;
+    }
 
     // Apply filters
     if (options?.unreadOnly) {

@@ -34,6 +34,7 @@ import { EmbeddingQueueService } from './services/embedding-queue.service';
 import { SummaryQueue } from './queues/summary.queue';
 import { SummaryProcessorService } from './services/summary-processor.service';
 import { SummaryWorker } from './workers/summary.worker';
+import { AutoReturnService } from './services/auto-return.service';
 
 @Module({
   imports: [
@@ -105,6 +106,8 @@ import { SummaryWorker } from './workers/summary.worker';
     SummaryQueue,
     SummaryProcessorService,
     SummaryWorker,
+    // Auto Return Service
+    AutoReturnService,
   ],
   exports: [
     PrismaService,
