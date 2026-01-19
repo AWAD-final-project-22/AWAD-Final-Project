@@ -107,6 +107,34 @@ export const useGetWorkflows = (params: IWorkflowParams) => {
   });
 };
 
+// Hook to sync emails from Gmail
+interface UseMutationSyncEmailsOptions {
+  onSuccess?: (data: { success: boolean; message: string }) => void;
+  onError?: (error: Error) => void;
+}
+
+export const useMutationSyncEmails = (
+  options?: UseMutationSyncEmailsOptions,
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const { syncEmails } = await import('../services/workflowQueries');
+      const response = await syncEmails();
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Invalidate all workflow queries to refetch fresh data
+      queryClient.invalidateQueries({ queryKey: workflowKeys.all });
+      options?.onSuccess?.(data);
+    },
+    onError: (error: Error) => {
+      options?.onError?.(error);
+    },
+  });
+};
+
 // Hook to update workflow status
 interface UseMutationUpdateStatusOptions {
   onSuccess?: (data: IEmailWorkflow) => void;

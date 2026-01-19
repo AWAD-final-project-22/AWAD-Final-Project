@@ -1,5 +1,10 @@
-export const formatDate = (dateString: string) => {
+export const formatDate = (dateString?: string | null) => {
+  if (!dateString) return 'N/A';
+
   const date = new Date(dateString);
+
+  if (isNaN(date.getTime())) return 'Invalid Date';
+
   const now = new Date();
 
   if (date.toDateString() === now.toDateString()) {

@@ -4,7 +4,10 @@ import { EmptyState } from '@/components/EmptyState';
 import { LoadingSpin } from '@/components/LoadingSpin';
 import { SearchResultsView } from '@/features/search/components/SearchResultsView';
 import { SearchWithSuggestions } from '@/features/search/components/SearchWithSuggestions';
-import { useSearchWorkflows } from '@/features/search/hooks/useSearch';
+import {
+  useSearchWorkflows,
+  useSearchWorkflowsSemantic,
+} from '@/features/search/hooks/useSearch';
 import { useLogout } from '@/hooks/useLogout';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,7 +28,10 @@ import { SNOOZED_COLUMN_ID } from './constants/kanban.constant';
 import { useKanban } from './hooks/useKanban';
 import { useKanbanKeyboardNav } from './hooks/useKanbanKeyboardNav';
 import { kanbanKeys } from './hooks/kanbanAPIs';
-import { workflowKeys } from '@/features/inbox/hooks/workflowAPIs';
+import {
+  workflowKeys,
+  useMutationSyncEmails,
+} from '@/features/inbox/hooks/workflowAPIs';
 import { clearExpiredCache } from '@/helpers/offlineCache.helper';
 
 import { PARAMS_URL } from '@/constants/params.constant';
@@ -40,9 +46,12 @@ import {
 } from './styles/KanbanPage.style';
 import { Action } from './components/Action';
 
+type SearchType = 'fuzzy' | 'semantic';
+
 const KanbanPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchPage, setSearchPage] = useState(1);
+  const [searchType, setSearchType] = useState<SearchType>('fuzzy');
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const { notification } = App.useApp();
@@ -52,18 +61,38 @@ const KanbanPage: React.FC = () => {
 
   const { handleLogout, isLoggingOut } = useLogout();
 
-  const [sortByDate, setSortByDate] = useState<string | undefined>(undefined);
+  const [filterValue, setFilterValue] = useState<string | undefined>(undefined);
   const { updateSearchQuery } = useControlParams();
 
+  // Fuzzy search
   const {
-    data: searchData,
-    isLoading: isSearchLoading,
-    isError: isSearchError,
-    error: searchError,
+    data: fuzzySearchData,
+    isLoading: isFuzzyLoading,
+    isError: isFuzzyError,
+    error: fuzzyError,
   } = useSearchWorkflows(
     { query: searchQuery, page: searchPage, limit: 10 },
-    searchQuery.length > 0,
+    searchQuery.length > 0 && searchType === 'fuzzy',
   );
+
+  // Semantic search
+  const {
+    data: semanticSearchData,
+    isLoading: isSemanticLoading,
+    isError: isSemanticError,
+    error: semanticError,
+  } = useSearchWorkflowsSemantic(
+    { query: searchQuery, page: searchPage, limit: 10 },
+    searchQuery.length > 0 && searchType === 'semantic',
+  );
+
+  // Use appropriate search data based on search type
+  const searchData =
+    searchType === 'fuzzy' ? fuzzySearchData : semanticSearchData;
+  const isSearchLoading =
+    searchType === 'fuzzy' ? isFuzzyLoading : isSemanticLoading;
+  const isSearchError = searchType === 'fuzzy' ? isFuzzyError : isSemanticError;
+  const searchError = searchType === 'fuzzy' ? fuzzyError : semanticError;
 
   const updateParamsSearchEmail = (value: string, param: string) => {
     const updatedQuery: Record<string, string | undefined> = {};
@@ -80,9 +109,11 @@ const KanbanPage: React.FC = () => {
     updatedQuery[PARAMS_URL.SEARCH_EMAIL] = undefined;
     updatedQuery[PARAMS_URL.FILTER_ATTACHMENT] = undefined;
     updatedQuery[PARAMS_URL.FILTER_BY_DATE] = undefined;
+    updatedQuery[PARAMS_URL.FILTER] = undefined;
     updatedQuery[PARAMS_URL.PAGE] = undefined;
     updateSearchQuery(updatedQuery, true);
   };
+
   const handleSearch = useCallback((value: string) => {
     setSearchQuery(value.trim());
     setSearchPage(1);
@@ -99,10 +130,42 @@ const KanbanPage: React.FC = () => {
     updateParamsSearchEmail(page.toString(), PARAMS_URL.PAGE);
   }, []);
 
-  const handleFilterChange = (value: string) => {
-    setSortByDate(value);
-    updateParamsSearchEmail(value, PARAMS_URL.FILTER);
+  const handleFilterChange = (value: string | undefined) => {
+    setFilterValue(value);
+    if (value) {
+      updateParamsSearchEmail(value, PARAMS_URL.FILTER);
+    } else {
+      updateParamsSearchEmail('', PARAMS_URL.FILTER);
+    }
   };
+
+  // const handleClearFilters = useCallback(() => {
+  //   setFilterValue(undefined);
+  //   updateParamsSearchEmail('', PARAMS_URL.FILTER);
+  // }, []);
+
+  const handleSearchTypeToggle = useCallback(() => {
+    setSearchType((prev) => (prev === 'fuzzy' ? 'semantic' : 'fuzzy'));
+  }, []);
+
+  // Sync emails from Gmail when page loads
+  const { mutate: syncEmails, isPending: isSyncing } = useMutationSyncEmails({
+    onSuccess: () => {
+      console.log('[Sync] Emails synced successfully');
+    },
+    onError: (error) => {
+      console.error('[Sync] Failed to sync emails:', error);
+      notification.error({
+        message: 'Sync Failed',
+        description: 'Could not sync emails from Gmail. Please try again.',
+      });
+    },
+  });
+
+  // Sync on mount
+  useEffect(() => {
+    syncEmails();
+  }, []);
 
   // Kanban state
   const {
@@ -121,6 +184,9 @@ const KanbanPage: React.FC = () => {
     isInboxLoading,
     isTodoLoading,
     isDoneLoading,
+    handleFilterChange: handleKanbanFilterChange,
+    handleSortChange: handleKanbanSortChange,
+    handleClearFilters: handleKanbanClearFilters,
   } = useKanban();
 
   const handleSnoozeConfirm = (snoozedUntil: Date) => {
@@ -135,6 +201,40 @@ const KanbanPage: React.FC = () => {
       setSelectedCardId(null);
     }
   }, [searchQuery]);
+
+  // Apply filters when filterValue changes
+  useEffect(() => {
+    if (filterValue === 'newest') {
+      handleKanbanSortChange('date-newest');
+      handleKanbanClearFilters();
+    } else if (filterValue === 'oldest') {
+      handleKanbanSortChange('date-oldest');
+      handleKanbanClearFilters();
+    } else if (filterValue === 'unread') {
+      handleKanbanFilterChange({
+        showUnreadOnly: true,
+        showAttachmentsOnly: false,
+        senderFilter: null,
+      });
+      handleKanbanSortChange('date-newest');
+    } else if (filterValue === 'attachments') {
+      handleKanbanFilterChange({
+        showUnreadOnly: false,
+        showAttachmentsOnly: true,
+        senderFilter: null,
+      });
+      handleKanbanSortChange('date-newest');
+    } else {
+      // Clear all filters
+      handleKanbanClearFilters();
+      handleKanbanSortChange('date-newest');
+    }
+  }, [
+    filterValue,
+    handleKanbanFilterChange,
+    handleKanbanSortChange,
+    handleKanbanClearFilters,
+  ]);
 
   useEffect(() => {
     const wasOnline = prevOnlineRef.current;
@@ -183,7 +283,10 @@ const KanbanPage: React.FC = () => {
     selectedCardId,
     onSelectCard: setSelectedCardId,
     onOpenGmail: (emailId: string) => {
-      window.open(`https://mail.google.com/mail/u/0/#inbox/${emailId}`, '_blank');
+      window.open(
+        `https://mail.google.com/mail/u/0/#inbox/${emailId}`,
+        '_blank',
+      );
     },
     searchInputId: 'kanban-search-input',
     enabled: !searchQuery && !snoozeModalOpen && !settingsModalOpen,
@@ -209,7 +312,7 @@ const KanbanPage: React.FC = () => {
       <FilterItem>
         <Select
           placeholder='Filter emails'
-          value={sortByDate}
+          value={filterValue}
           onChange={handleFilterChange}
           style={{ width: 150 }}
           options={[
@@ -252,7 +355,13 @@ const KanbanPage: React.FC = () => {
     </SearchInput>
   );
 
-  if (isEmailsLoading || isInboxLoading || isTodoLoading || isDoneLoading) {
+  if (
+    isSyncing ||
+    isEmailsLoading ||
+    isInboxLoading ||
+    isTodoLoading ||
+    isDoneLoading
+  ) {
     return (
       <KanbanLayout>
         <LoadingSpin />
@@ -279,6 +388,8 @@ const KanbanPage: React.FC = () => {
             refreshKanban={refetch}
             onLogout={handleLogout}
             isLoggingOut={isLoggingOut}
+            searchType={searchType}
+            onSearchTypeToggle={handleSearchTypeToggle}
           />
         </KanbanHeader>
         <Layout.Content>
@@ -312,6 +423,8 @@ const KanbanPage: React.FC = () => {
           refreshKanban={refetch}
           onLogout={handleLogout}
           isLoggingOut={isLoggingOut}
+          searchType={searchType}
+          onSearchTypeToggle={handleSearchTypeToggle}
         />
       </KanbanHeader>
 

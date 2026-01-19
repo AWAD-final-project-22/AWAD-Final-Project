@@ -10,7 +10,10 @@ import {
   useMutationModifyEmailLabels,
 } from '@/features/inbox/hooks/mailAPIs';
 import { getListEmailsByMailBoxId } from '@/features/inbox/services/mailQueries';
-import { IEmail, IEmailResponse } from '@/features/inbox/interfaces/mailAPI.interface';
+import {
+  IEmail,
+  IEmailResponse,
+} from '@/features/inbox/interfaces/mailAPI.interface';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useAppSelector } from '@/redux/hooks';
 import { selectCurrentUser } from '@/redux/slices/authSlice';
@@ -439,7 +442,10 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
               label: col.label,
             });
             fetchAndUpdate().catch((error) => {
-              console.warn('[offline-cache] label emails refresh failed', error);
+              console.warn(
+                '[offline-cache] label emails refresh failed',
+                error,
+              );
             });
           }, 0);
           return cached;
@@ -584,7 +590,7 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
             emailId: email.id,
             subject: email.subject || '(No Subject)',
             from: email.sender || 'unknown',
-            date: email.timestamp || new Date().toISOString(),
+            date: email.date || new Date().toISOString(),
             snippet: email.preview,
             status: mapKanbanToWorkflowStatus(newStatus),
           });
@@ -709,14 +715,15 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
   const columns = useMemo(() => {
     const customColumns = dynamicColumns.map((col) => {
       const labelIndex = dynamicColumns.findIndex((c) => c.id === col.id);
-      const labelEmails = (labelEmailsResults[labelIndex]?.data as IEmailResponse)?.emails || [];
+      const labelEmails =
+        (labelEmailsResults[labelIndex]?.data as IEmailResponse)?.emails || [];
       const mappedEmails: IKanbanEmail[] = labelEmails.map((email: IEmail) => ({
         id: email.id,
         mailboxId: email.mailboxId,
         sender: email.sender,
         subject: email.subject,
         preview: email.preview,
-        timestamp: email.timestamp,
+        timestamp: email.date,
         isRead: email.isRead,
         isStarred: email.isStarred,
         hasAttachment: email.hasAttachment,
@@ -724,10 +731,14 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
         status: 'INBOX' as KanbanStatus,
       }));
 
+      // Apply filters and sort to custom columns
+      const filteredEmails = filterEmails(mappedEmails);
+      const sortedEmails = sortEmails(filteredEmails);
+
       return {
         id: `custom-${col.id}`,
         title: col.name || col.label,
-        emails: mappedEmails,
+        emails: sortedEmails,
         label: col.label,
         isCustom: true,
       };
@@ -755,7 +766,13 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
     ];
 
     return [...displayCustomColumns, ...staticColumns];
-  }, [processedEmails, dynamicColumns, labelEmailsResults]);
+  }, [
+    processedEmails,
+    dynamicColumns,
+    labelEmailsResults,
+    filterEmails,
+    sortEmails,
+  ]);
 
   // Snoozed emails for separate display with filters and sort
   const snoozedEmails = useMemo(() => {

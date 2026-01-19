@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { AutoComplete, Input } from 'antd';
-import type { AutoCompleteProps } from 'antd';
 import {
-  SearchOutlined,
-  UserOutlined,
   FileTextOutlined,
+  UserOutlined
 } from '@ant-design/icons';
+import type { AutoCompleteProps } from 'antd';
+import { AutoComplete, Input } from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useSuggestions } from '../hooks/useSuggestions';
 import { SuggestionItem } from '../interfaces/suggestions.interface';
@@ -172,7 +171,6 @@ export const SearchWithSuggestions: React.FC<SearchWithSuggestionsProps> = ({
             handleClear();
           }
         }}
-        prefix={<SearchOutlined />}
       />
     </StyledAutoComplete>
   );
