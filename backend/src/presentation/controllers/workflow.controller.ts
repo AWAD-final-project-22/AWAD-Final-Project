@@ -12,6 +12,7 @@ import {
   ParseEnumPipe,
   ParseIntPipe,
   DefaultValuePipe,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { GetWorkflowsUseCase } from '../../application/use-cases/workflow/get-workflows.use-case';
@@ -21,6 +22,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiResponse } from '@ne
 import {
   ApiGetWorkflowsDocs,
   ApiUpdateWorkflowStatusDocs,
+  ApiUpdateWorkflowSnoozeDocs,
 } from '../decorators/swagger/workflow.swagger.decorator';
 import { ApiSearchWorkflowsDocs } from '../decorators/swagger/search-workflow.swagger.decorator';
 import { SearchWorkflowsUseCase } from '../../application/use-cases/workflow/search-workflow.use-case';
@@ -144,7 +146,7 @@ export class WorkflowController {
     const totalTime = Date.now() - startTime;
 
     this.logger.log(
-      `[FUZZY SEARCH] ✅ API response - Found ${result.data.length} results, ` +
+      `[FUZZY SEARCH] API response - Found ${result.data.length} results, ` +
       `Total: ${result.pagination.total}, Time: ${totalTime}ms`
     );
 
@@ -159,6 +161,7 @@ export class WorkflowController {
   }
 
   @Patch(':id/snooze')
+  @ApiUpdateWorkflowSnoozeDocs()
   async updateSnooze(
     @Param('id') id: string,
     @Body('snoozedUntil') snoozedUntil: string,
@@ -166,7 +169,17 @@ export class WorkflowController {
   ): Promise<{ success: boolean; data: EmailWorkflowEntity }> {
     const userId = req.user.userId;
     this.logger.log(`PATCH /workflows/${id}/snooze - User: ${userId}`);
+    
+    // Validation: Kiểm tra format ngày
     const snoozedDate = new Date(snoozedUntil);
+    if (isNaN(snoozedDate.getTime())) {
+      throw new BadRequestException('Invalid date format. Use ISO 8601 format (e.g., 2025-01-25T10:00:00.000Z)');
+    }
+    
+    if (snoozedDate <= new Date()) {
+      throw new BadRequestException('Snooze date must be in the future');
+    }
+    
     const updated = await this.getWorkflowsUseCase.updateSnooze(
       userId,
       id,

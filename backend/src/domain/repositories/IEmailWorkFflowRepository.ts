@@ -36,7 +36,7 @@ export interface IEmailWorkflowRepository {
     id: string,
     status: WorkflowStatus,
   ): Promise<EmailWorkflowEntity>;
-  updateSnooze(id: string, snoozedUntil: Date): Promise<EmailWorkflowEntity>;
+  updateSnooze(id: string, snoozedUntil: Date | null): Promise<EmailWorkflowEntity>;
   updateAiSummary(
     id: string,
     summary: string,

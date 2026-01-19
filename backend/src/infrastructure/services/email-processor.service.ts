@@ -59,11 +59,9 @@ export class EmailProcessorService {
 
     let newWorkflow;
     if (existingWorkflow) {
-      // If workflow exists but has invalid summary, just queue it for re-processing
       newWorkflow = existingWorkflow;
       this.logger.log(`[Email ${gmailMessageId}] Existing workflow found, will queue for AI summary`);
     } else {
-      // Create new workflow WITHOUT AI summary (will be processed asynchronously)
       newWorkflow = await this.workflowRepository.create({
         userId,
         gmailMessageId,
@@ -81,7 +79,6 @@ export class EmailProcessorService {
       this.logger.log(`[Email ${gmailMessageId}] Saved to DB (AI summary pending)`);
     }
 
-    // Queue AI summary processing (async)
     try {
       await this.summaryQueue.addBatchJob({
         emailIds: [gmailMessageId],
@@ -90,7 +87,6 @@ export class EmailProcessorService {
       this.logger.log(`[Email ${gmailMessageId}] Queued for AI summary processing`);
     } catch (error) {
       this.logger.error(`[Email ${gmailMessageId}] Failed to queue AI summary job:`, error);
-      // Update workflow to indicate queue failure so it can be retried later
       try {
         await this.workflowRepository.updateAiSummary(
           newWorkflow.id,
