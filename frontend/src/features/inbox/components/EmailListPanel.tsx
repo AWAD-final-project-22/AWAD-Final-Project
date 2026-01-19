@@ -40,6 +40,8 @@ interface EmailListPanelProps {
   selectedEmail: IEmail | undefined;
   handlePageChange: (page: number) => void;
   handleDeleteEmail: (emailId: string) => Promise<void>;
+  handleMarkAsRead?: (emailIds: string[]) => Promise<void>;
+  handleToggleStar?: (emailId: string, isStarred: boolean) => Promise<void>;
 }
 
 export const EmailListPanel: React.FC<EmailListPanelProps> = ({
@@ -55,8 +57,18 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
   handlePageChange,
   emails,
   handleDeleteEmail,
+  handleMarkAsRead,
+  handleToggleStar,
 }) => {
   const { modal } = App.useApp();
+
+  const handleMarkAsReadClick = async () => {
+    const selectedEmails = Array.from(checkedEmails);
+    if (selectedEmails.length === 0 || !handleMarkAsRead) {
+      return;
+    }
+    await handleMarkAsRead(selectedEmails);
+  };
 
   const showDeleteConfirm = () => {
     const selectedEmails = Array.from(checkedEmails);
@@ -132,7 +144,9 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
                       style={{ marginRight: 8 }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Toggle star status
+                        if (handleToggleStar) {
+                          handleToggleStar(email.id, email.isStarred || false);
+                        }
                       }}
                     />
                   </Tooltip>
@@ -240,7 +254,12 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
           />
         </Tooltip>
         <Tooltip title='Mark as read'>
-          <Button type='text' icon={<MailOutlined />} />
+          <Button 
+            type='text' 
+            icon={<MailOutlined />}
+            onClick={handleMarkAsReadClick}
+            disabled={checkedEmails.size === 0}
+          />
         </Tooltip>
         <div style={{ flex: 1 }} />
         <ViewToggle currentView='list' />

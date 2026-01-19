@@ -51,6 +51,7 @@ interface EmailDetailProps {
     filename: string,
   ) => void;
   handleDeleteEmail?: (emailId: string) => Promise<void>;
+  handleToggleStar?: (emailId: string, isStarred: boolean) => Promise<void>;
 }
 
 export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
@@ -63,6 +64,7 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
   isEmailDetailLoading = false,
   onDownloadAttachment,
   handleDeleteEmail,
+  handleToggleStar,
 }) => {
   const { modal } = App.useApp();
   const [replyModalOpen, setReplyModalOpen] = useState(false);
@@ -114,6 +116,13 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
     }
   };
 
+  const handleStarClick = async () => {
+    if (!email || !handleToggleStar) return;
+
+    const isStarred = email.isStarred || false;
+    await handleToggleStar(email.id, isStarred);
+  };
+
   const showDeleteConfirm = () => {
     if (!email || !handleDeleteEmail) return;
 
@@ -159,7 +168,14 @@ export const EmailDetailPanel: React.FC<EmailDetailProps> = ({
                       {new Date(email.date).toLocaleString()}
                     </Text>
                     <Tooltip title='Toggle star'>
-                      <Button type='text' icon={<StarOutlined />} />
+                      <Button 
+                        type='text' 
+                        icon={<StarOutlined />}
+                        onClick={handleStarClick}
+                        style={{
+                          color: email.isStarred ? '#fadb14' : undefined
+                        }}
+                      />
                     </Tooltip>
                     <Tooltip title='Forward'>
                       <Button 

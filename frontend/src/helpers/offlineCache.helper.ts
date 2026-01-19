@@ -84,7 +84,6 @@ export const writeCache = async <T>(store: StoreName, key: string, data: T) => {
 };
 
 export const clearExpiredCache = async (ttl = CACHE_TTL_MS) => {
-  const now = Date.now();
   let removed = 0;
 
   try {
