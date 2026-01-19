@@ -5,7 +5,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons';
-import { Button } from 'antd';
+import { Button, Tag } from 'antd';
 import React from 'react';
 import { MobileHeader } from '../styles/InboxPage.style';
 
@@ -15,6 +15,7 @@ interface MobileHeaderBarProps {
   showEmailList: boolean;
   handleBackToList: () => void;
   isMobile: boolean;
+  isOnline?: boolean;
 }
 
 export const MobileHeaderBar: React.FC<MobileHeaderBarProps> = ({
@@ -23,6 +24,7 @@ export const MobileHeaderBar: React.FC<MobileHeaderBarProps> = ({
   showEmailList,
   handleBackToList,
   isMobile,
+  isOnline = true,
 }) => {
   if (!isMobile) return null;
 
@@ -43,6 +45,7 @@ export const MobileHeaderBar: React.FC<MobileHeaderBarProps> = ({
         </Button>
       )}
       <div style={{ flex: 1 }}></div>
+      {!isOnline && <Tag color='red'>Offline</Tag>}
       {/* <Button icon={<ReloadOutlined />} type='text' /> */}
     </MobileHeader>
   );

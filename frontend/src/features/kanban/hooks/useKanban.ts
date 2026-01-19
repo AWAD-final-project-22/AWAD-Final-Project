@@ -11,6 +11,17 @@ import {
 } from '@/features/inbox/hooks/mailAPIs';
 import { getListEmailsByMailBoxId } from '@/features/inbox/services/mailQueries';
 import { IEmail } from '@/features/inbox/interfaces/mailAPI.interface';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useAppSelector } from '@/redux/hooks';
+import { selectCurrentUser } from '@/redux/slices/authSlice';
+import {
+  EMAIL_LIST_LIMIT,
+  generateCacheKey,
+  logOfflineCache,
+  readCache,
+  STORES,
+  writeCache,
+} from '@/helpers/offlineCache.helper';
 import {
   IKanbanEmail,
   KanbanStatus,
@@ -83,6 +94,8 @@ const getInitialSort = (): SortType => {
 
 export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
   const { notification } = App.useApp();
+  const { isOnline } = useNetworkStatus();
+  const userId = useAppSelector(selectCurrentUser)?.id || 'anonymous';
   const [snoozeModalOpen, setSnoozeModalOpen] = useState(false);
   const [selectedEmailForSnooze, setSelectedEmailForSnooze] = useState<
     string | null
@@ -331,20 +344,116 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
   }, [groupedEmails, filterEmails, sortEmails]);
 
   const { data: dynamicColumns = [] } = useGetKanbanColumns();
+  const queryClient = useQueryClient();
+
+  const labelPage = 1;
+  const labelLimit = 50;
+  const labelSearch = '';
+  const labelFilter = '';
 
   const labelEmailsResults = useQueries({
     queries: dynamicColumns.map((col) => ({
-      queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY, col.label],
-      queryFn: () =>
-        getListEmailsByMailBoxId({ page: 1, limit: 50 }, col.label),
-      select: (
-        response: Awaited<ReturnType<typeof getListEmailsByMailBoxId>>,
-      ) => response.data,
+      queryKey: [
+        API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY,
+        col.label,
+        userId,
+        labelPage,
+        labelLimit,
+        labelSearch,
+        labelFilter,
+      ],
+      queryFn: async () => {
+        const cacheKey = generateCacheKey(
+          userId,
+          col.label,
+          labelPage,
+          labelLimit,
+          labelSearch,
+          labelFilter,
+        );
+        const cached = await readCache(STORES.emailLists, cacheKey);
+        logOfflineCache('label emails cache read', {
+          cacheKey,
+          label: col.label,
+          hit: !!cached,
+        });
+
+        if (!isOnline) {
+          logOfflineCache('label emails offline return', {
+            cacheKey,
+            label: col.label,
+          });
+          return (
+            cached || {
+              emails: [],
+              page: labelPage,
+              limit: labelLimit,
+              total: 0,
+            }
+          );
+        }
+
+        const fetchAndUpdate = async () => {
+          logOfflineCache('label emails fetch start', {
+            cacheKey,
+            label: col.label,
+          });
+          const response = await getListEmailsByMailBoxId(
+            { page: labelPage, limit: labelLimit },
+            col.label,
+          );
+          const limitedEmails = response.data.emails.slice(0, EMAIL_LIST_LIMIT);
+          const updated = {
+            ...response.data,
+            emails: limitedEmails,
+          };
+          await writeCache(STORES.emailLists, cacheKey, updated);
+          queryClient.setQueryData(
+            [
+              API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY,
+              col.label,
+              userId,
+              labelPage,
+              labelLimit,
+              labelSearch,
+              labelFilter,
+            ],
+            updated,
+          );
+          logOfflineCache('label emails fetch success', {
+            cacheKey,
+            label: col.label,
+            count: response.data?.emails?.length,
+          });
+          return response.data;
+        };
+
+        if (cached) {
+          logOfflineCache('label emails return cached', {
+            cacheKey,
+            label: col.label,
+          });
+          setTimeout(() => {
+            logOfflineCache('label emails background fetch', {
+              cacheKey,
+              label: col.label,
+            });
+            fetchAndUpdate().catch((error) => {
+              console.warn('[offline-cache] label emails refresh failed', error);
+            });
+          }, 0);
+          return cached;
+        }
+
+        logOfflineCache('label emails cache miss', {
+          cacheKey,
+          label: col.label,
+        });
+        return fetchAndUpdate();
+      },
       enabled: !!col.label,
     })),
   });
-
-  const queryClient = useQueryClient();
 
   const { mutateAsync: modifyLabels } = useMutationModifyEmailLabels({
     onSuccess: () => {

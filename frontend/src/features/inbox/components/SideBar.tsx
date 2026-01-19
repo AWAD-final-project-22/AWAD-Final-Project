@@ -10,7 +10,7 @@ import {
   SendOutlined,
   StarOutlined,
 } from '@ant-design/icons';
-import { Button, Drawer, Menu } from 'antd';
+import { Button, Drawer, Menu, Tag } from 'antd';
 import React from 'react';
 import { IMailbox } from '../interfaces/mailAPI.interface';
 import { DesktopSider, SidebarContent } from '../styles/InboxPage.style';
@@ -30,6 +30,7 @@ interface SidebarProps {
   handleSearch?: (query: string) => void;
   onLogout?: () => void;
   isLoggingOut?: boolean;
+  isOnline?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -45,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   handleSearch,
   onLogout,
   isLoggingOut,
+  isOnline = true,
 }) => {
   const items = mailboxes?.map((mailbox) => {
     let icon: React.ReactNode;
@@ -77,6 +79,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const sidebarContent = (
     <SidebarContent>
       <div style={{ padding: '16px', textAlign: 'center' }}>
+        {!isOnline && (
+          <Tag color='red' style={{ marginBottom: 8 }}>
+            Offline
+          </Tag>
+        )}
         <Button
           type='primary'
           icon={<EditOutlined />}

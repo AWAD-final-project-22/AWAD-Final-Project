@@ -6,6 +6,8 @@ import { SearchResultsView } from '@/features/search/components/SearchResultsVie
 import { SearchWithSuggestions } from '@/features/search/components/SearchWithSuggestions';
 import { useSearchWorkflows } from '@/features/search/hooks/useSearch';
 import { useLogout } from '@/hooks/useLogout';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   AppstoreOutlined,
   SortDescendingOutlined,
@@ -14,14 +16,17 @@ import {
   PaperClipOutlined,
 } from '@ant-design/icons';
 import { DragDropContext } from '@hello-pangea/dnd';
-import { Layout, Select } from 'antd';
-import React, { useCallback, useEffect, useState } from 'react';
+import { App, Layout, Select, Tag } from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { KanbanColumn } from './components/KanbanColumn';
 import { SettingsModal } from './components/SettingsModal';
 import { SnoozeModal } from './components/SnoozeModal';
 import { SNOOZED_COLUMN_ID } from './constants/kanban.constant';
 import { useKanban } from './hooks/useKanban';
 import { useKanbanKeyboardNav } from './hooks/useKanbanKeyboardNav';
+import { kanbanKeys } from './hooks/kanbanAPIs';
+import { workflowKeys } from '@/features/inbox/hooks/workflowAPIs';
+import { clearExpiredCache } from '@/helpers/offlineCache.helper';
 
 import { PARAMS_URL } from '@/constants/params.constant';
 import { useControlParams } from '@/hooks/useControlParams';
@@ -40,6 +45,10 @@ const KanbanPage: React.FC = () => {
   const [searchPage, setSearchPage] = useState(1);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const { notification } = App.useApp();
+  const { isOnline } = useNetworkStatus();
+  const prevOnlineRef = useRef(isOnline);
+  const queryClient = useQueryClient();
 
   const { handleLogout, isLoggingOut } = useLogout();
 
@@ -126,6 +135,34 @@ const KanbanPage: React.FC = () => {
       setSelectedCardId(null);
     }
   }, [searchQuery]);
+
+  useEffect(() => {
+    const wasOnline = prevOnlineRef.current;
+    if (wasOnline === isOnline) return;
+
+    if (!isOnline) {
+      notification.warning({
+        message: 'Offline mode',
+        description: 'Showing cached data.',
+      });
+    } else {
+      notification.success({
+        message: 'Back online',
+        description: 'Data will refresh automatically.',
+      });
+      (async () => {
+        try {
+          await clearExpiredCache();
+        } catch (error) {
+          console.warn('[offline-cache] cleanup failed', error);
+        }
+        queryClient.invalidateQueries({ queryKey: workflowKeys.all });
+        queryClient.invalidateQueries({ queryKey: kanbanKeys.columns() });
+      })();
+    }
+
+    prevOnlineRef.current = isOnline;
+  }, [isOnline, notification, queryClient]);
 
   const navColumns = React.useMemo(() => {
     const baseColumns = columns.map((col) => ({
@@ -261,6 +298,11 @@ const KanbanPage: React.FC = () => {
         <KanbanTitle>
           <AppstoreOutlined />
           AI Email Flow
+          {!isOnline && (
+            <Tag color='red' style={{ marginLeft: 8 }}>
+              Offline
+            </Tag>
+          )}
         </KanbanTitle>
 
         {renderSearchInput()}
