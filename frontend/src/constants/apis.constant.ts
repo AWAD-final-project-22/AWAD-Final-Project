@@ -45,6 +45,10 @@ export const API_PATH = {
       API_PATH: (id: string) => `/mail/emails/${id}/reply`,
       API_KEY: 'replyEmail',
     },
+    FORWARD_EMAIL: {
+      API_PATH: (id: string) => `/mail/emails/${id}/forward`,
+      API_KEY: 'forwardEmail',
+    },
     SEND_EMAIL: {
       API_PATH: '/mail/emails/send',
       API_KEY: 'sendEmail',

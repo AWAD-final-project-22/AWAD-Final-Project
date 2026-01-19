@@ -18,6 +18,7 @@ import {
   modifyEmailById,
   modifyEmailLabels,
   replyEmailById,
+  forwardEmailById,
   sendEmail,
   streamAttachmentById,
   deleteEmailById,
@@ -27,6 +28,7 @@ import {
   IEmailParams,
   IEmailResponse,
   IReplyEmailParams,
+  IForwardEmailParams,
   IEmailDetail,
   IMailbox,
 } from '../interfaces/mailAPI.interface';
@@ -236,6 +238,20 @@ export const useMutationReplyEmailById = ({
     mutationKey: [API_PATH.EMAIL.REPLY_EMAIL.API_KEY],
     mutationFn: ({ id, params }: { id: string; params: IReplyEmailParams }) =>
       replyEmailById(id, params),
+    onSuccess,
+    onError,
+  });
+};
+
+// Forward email by email id
+export const useMutationForwardEmailById = ({
+  onSuccess,
+  onError,
+}: UseMutationLoginOptions) => {
+  return useMutation({
+    mutationKey: [API_PATH.EMAIL.FORWARD_EMAIL.API_KEY],
+    mutationFn: ({ id, params }: { id: string; params: IForwardEmailParams }) =>
+      forwardEmailById(id, params),
     onSuccess,
     onError,
   });

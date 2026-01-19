@@ -9,6 +9,7 @@ import {
 } from '@nestjs/swagger';
 import { SendEmailDto } from '../../dtos/request/send-email.dto';
 import { ReplyEmailDto } from '../../dtos/request/reply-email.dto';
+import { ForwardEmailDto } from '../../dtos/request/forward-email.dto';
 import { ModifyEmailDto } from '../../dtos/request/modify-email.dto';
 import { SyncEmailsDto } from '../../dtos/request/sync-emails.dto';
 import { SyncEmailsResponseDto } from '../../dtos/response/sync-emails.response.dto';
@@ -251,6 +252,72 @@ export const ApiReplyEmail = () =>
       },
     }),
     ApiResponse({ status: 400, description: 'Bad request - Invalid reply data' }),
+    ApiResponse({ status: 401, description: 'Unauthorized' }),
+    ApiResponse({ status: 404, description: 'Original email not found' }),
+  );
+
+export const ApiForwardEmail = () =>
+  applyDecorators(
+    ApiOperation({
+      summary: 'Forward an email',
+      description: 'Forward an existing email to new recipients with optional file attachments',
+    }),
+    ApiParam({ name: 'id', description: 'Original email message ID to forward', example: '18c8f1234567890a' }),
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      schema: {
+        type: 'object',
+        properties: {
+          to: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Recipient email addresses',
+            example: ['recipient@example.com']
+          },
+          cc: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'CC recipients'
+          },
+          bcc: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'BCC recipients'
+          },
+          body: {
+            type: 'string',
+            description: 'Forward message/comment (HTML supported)',
+            example: '<p>Please see the email below.</p>'
+          },
+          includeOriginal: {
+            type: 'boolean',
+            description: 'Include original message in forward',
+            default: true
+          },
+          files: {
+            type: 'array',
+            items: {
+              type: 'string',
+              format: 'binary'
+            },
+            description: 'File attachments (upload files directly)'
+          }
+        },
+        required: ['to', 'body']
+      }
+    }),
+    ApiResponse({
+      status: 201,
+      description: 'Email forwarded successfully',
+      schema: {
+        example: {
+          success: true,
+          messageId: '18c8f9876543210c',
+          threadId: null,
+        },
+      },
+    }),
+    ApiResponse({ status: 400, description: 'Bad request - Invalid forward data' }),
     ApiResponse({ status: 401, description: 'Unauthorized' }),
     ApiResponse({ status: 404, description: 'Original email not found' }),
   );

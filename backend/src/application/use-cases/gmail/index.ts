@@ -7,6 +7,7 @@ import { IGmailService } from '../../ports/gmail.port';
 import { IEncryptionService } from '../../ports/encryption.port';
 import { SendEmailUseCase } from './send-email.use-case';
 import { ReplyEmailUseCase } from './reply-email.use-case';
+import { ForwardEmailUseCase } from './forward-email.use-case';
 import { ModifyEmailUseCase } from './modify-email.use-case';
 import { GetAttachmentUseCase } from './get-attachment.use-case';
 import { SyncEmailsUseCase } from './sync-emails.use-case';
@@ -70,6 +71,15 @@ export const GmailUseCaseProviders = [
     inject: [IUserRepository, IGmailService, IEncryptionService],
   },
   {
+    provide: ForwardEmailUseCase,
+    useFactory: (
+      userRepo: IUserRepository,
+      gmailService: IGmailService,
+      encryptionService: IEncryptionService,
+    ) => new ForwardEmailUseCase(userRepo, gmailService, encryptionService),
+    inject: [IUserRepository, IGmailService, IEncryptionService],
+  },
+  {
     provide: ModifyEmailUseCase,
     useFactory: (
       userRepo: IUserRepository,
@@ -122,6 +132,7 @@ export const GmailUseCases = [
   GetEmailDetailUseCase,
   SendEmailUseCase,
   ReplyEmailUseCase,
+  ForwardEmailUseCase,
   ModifyEmailUseCase,
   GetAttachmentUseCase,
   SyncEmailsUseCase,

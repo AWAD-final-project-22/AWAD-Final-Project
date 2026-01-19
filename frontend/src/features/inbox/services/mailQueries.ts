@@ -8,6 +8,7 @@ import {
   IEmailResponse,
   IMailbox,
   IReplyEmailParams,
+  IForwardEmailParams,
   ISendMessageParams,
 } from '../interfaces/mailAPI.interface';
 
@@ -47,6 +48,17 @@ export function replyEmailById(
 ): Promise<AxiosResponse<void>> {
   return axiosClient.post<void>(
     API_PATH.EMAIL.REPLY_EMAIL.API_PATH(id),
+    params,
+  );
+}
+
+// Forward email by email id
+export function forwardEmailById(
+  id: string,
+  params: IForwardEmailParams,
+): Promise<AxiosResponse<void>> {
+  return axiosClient.post<void>(
+    API_PATH.EMAIL.FORWARD_EMAIL.API_PATH(id),
     params,
   );
 }

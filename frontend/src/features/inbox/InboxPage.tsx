@@ -58,6 +58,8 @@ const InboxPage: React.FC = () => {
     isSendEmailPending,
     handleReplyEmail,
     isReplyEmailPending,
+    handleForwardEmail,
+    isForwardEmailPending,
     handleDownloadAttachment,
     handlePageChange,
     handleSearch,
@@ -160,6 +162,8 @@ const InboxPage: React.FC = () => {
               email={emailDetail}
               handleSendReply={handleReplyEmail}
               isReplyEmailPending={isReplyEmailPending}
+              handleSendForward={handleForwardEmail}
+              isForwardEmailPending={isForwardEmailPending}
               isEmailDetailLoading={isEmailDetailLoading}
               onDownloadAttachment={handleDownloadAttachment}
               handleDeleteEmail={handleDeleteEmail}
