@@ -12,3 +12,12 @@ export function searchWorkflows(
     { params: serializedParamsQuery(params) },
   );
 }
+
+export function searchWorkflowsSemantic(
+  params: ISearchParams,
+): Promise<AxiosResponse<ISearchResponse>> {
+  return axiosClient.get<ISearchResponse>(
+    API_PATH.WORKFLOW.SEARCH_SEMANTIC.API_PATH,
+    { params: serializedParamsQuery(params) },
+  );
+}

@@ -9,7 +9,7 @@ export interface IEmail {
   sender: string;
   subject: string;
   preview: string;
-  timestamp: string;
+  date: string;
   isRead?: boolean;
   isStarred?: boolean;
   hasAttachment?: boolean;

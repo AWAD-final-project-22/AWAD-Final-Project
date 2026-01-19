@@ -72,9 +72,17 @@ export const API_PATH = {
       API_PATH: '/workflows',
       API_KEY: 'getWorkflows',
     },
+    SYNC_EMAILS: {
+      API_PATH: '/mail/sync',
+      API_KEY: 'syncEmails',
+    },
     SEARCH_WORKFLOWS: {
       API_PATH: '/workflows/search',
       API_KEY: 'searchWorkflows',
+    },
+    SEARCH_SEMANTIC: {
+      API_PATH: '/workflows/search/semantic',
+      API_KEY: 'searchSemantic',
     },
     SUGGESTIONS: {
       API_PATH: '/workflows/search/suggestions',

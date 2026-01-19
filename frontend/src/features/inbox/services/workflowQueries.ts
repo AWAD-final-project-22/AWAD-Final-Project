@@ -9,6 +9,13 @@ import {
   WorkflowStatus,
 } from '../interfaces/workflow.interface';
 
+// Sync emails from Gmail to database
+export function syncEmails(): Promise<AxiosResponse<{ success: boolean; message: string }>> {
+  return axiosClient.post<{ success: boolean; message: string }>(
+    API_PATH.WORKFLOW.SYNC_EMAILS.API_PATH,
+  );
+}
+
 // Get workflows by status
 export function getWorkflowsByStatus(
   params: IWorkflowParams,

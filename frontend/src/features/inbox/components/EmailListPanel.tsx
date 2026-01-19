@@ -165,7 +165,7 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
                     >
                       {email.sender.split('<')[0].trim()}
                     </EmailSubject>
-                    <EmailTime>{formatDate(email.timestamp)}</EmailTime>
+                    <EmailTime>{formatDate(email.date)}</EmailTime>
                   </div>
                   <div
                     style={{
@@ -200,8 +200,8 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
                               ? `✨ ${email.aiSummary.substring(0, 80)}...`
                               : `✨ ${email.aiSummary}`
                             : email.preview.length > 80
-                            ? `${email.preview.substring(0, 80)}...`
-                            : email.preview}
+                              ? `${email.preview.substring(0, 80)}...`
+                              : email.preview}
                         </Text>
                       </div>
                     </div>
@@ -254,8 +254,8 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
           />
         </Tooltip>
         <Tooltip title='Mark as read'>
-          <Button 
-            type='text' 
+          <Button
+            type='text'
             icon={<MailOutlined />}
             onClick={handleMarkAsReadClick}
             disabled={checkedEmails.size === 0}
