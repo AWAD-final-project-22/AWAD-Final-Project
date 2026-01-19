@@ -10,7 +10,7 @@ import {
   useMutationModifyEmailLabels,
 } from '@/features/inbox/hooks/mailAPIs';
 import { getListEmailsByMailBoxId } from '@/features/inbox/services/mailQueries';
-import { IEmail } from '@/features/inbox/interfaces/mailAPI.interface';
+import { IEmail, IEmailResponse } from '@/features/inbox/interfaces/mailAPI.interface';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useAppSelector } from '@/redux/hooks';
 import { selectCurrentUser } from '@/redux/slices/authSlice';
@@ -568,7 +568,7 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
         } else {
           // Workflow doesn't exist, find email data and create workflow
           const allLabelEmails = labelEmailsResults.flatMap(
-            (r) => r.data?.emails || [],
+            (r) => (r.data as IEmailResponse)?.emails || [],
           );
           const email = allLabelEmails.find((e) => e.id === emailId);
 
@@ -709,7 +709,7 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
   const columns = useMemo(() => {
     const customColumns = dynamicColumns.map((col) => {
       const labelIndex = dynamicColumns.findIndex((c) => c.id === col.id);
-      const labelEmails = labelEmailsResults[labelIndex]?.data?.emails || [];
+      const labelEmails = (labelEmailsResults[labelIndex]?.data as IEmailResponse)?.emails || [];
       const mappedEmails: IKanbanEmail[] = labelEmails.map((email: IEmail) => ({
         id: email.id,
         mailboxId: email.mailboxId,

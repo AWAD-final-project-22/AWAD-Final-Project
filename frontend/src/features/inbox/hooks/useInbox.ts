@@ -295,6 +295,73 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     updateSearchQuery({ [PARAMS_URL.SEARCH_EMAIL]: query });
   };
 
+  const handleToggleStar = async (emailId: string, isStarred: boolean) => {
+    try {
+      const action = isStarred ? 'unstar' : 'star';
+      await modifyEmail({
+        id: emailId,
+        action: action,
+      });
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({
+        queryKey: [API_PATH.EMAIL.GET_DETAIL_MAIL.API_KEY, emailId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY,
+          selectedMailbox,
+        ],
+      });
+      
+      notification.success({
+        message: isStarred ? 'Unstarred' : 'Starred',
+        description: `Email ${isStarred ? 'unstarred' : 'starred'} successfully`,
+      });
+    } catch (error) {
+      console.error('Toggle star failed:', error);
+      notification.error({
+        message: 'Failed to toggle star',
+      });
+    }
+  };
+
+  const handleMarkAsRead = async (emailIds: string[]) => {
+    try {
+      // Mark all selected emails as read in parallel
+      await Promise.all(
+        emailIds.map((emailId) =>
+          modifyEmail({
+            id: emailId,
+            action: 'mark_read',
+          })
+        )
+      );
+      
+      // Clear checked emails
+      setCheckedEmails(new Set());
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({
+        queryKey: [
+          API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY,
+          selectedMailbox,
+        ],
+      });
+      
+      notification.success({
+        message: 'Marked as read',
+        description: `${emailIds.length} email(s) marked as read`,
+      });
+    } catch (error) {
+      console.error('Mark as read failed:', error);
+      notification.error({
+        message: 'Failed to mark emails as read',
+        description: 'Please try again',
+      });
+    }
+  };
+
   const handleDeleteEmail = async (emailId: string) => {
     try {
       await deleteEmail(emailId);
@@ -352,6 +419,8 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
     modifyEmail,
     isModifyEmailPending,
 
+    handleToggleStar,
+    handleMarkAsRead,
     handleDeleteEmail,
     isDeleteEmailPending,
 
