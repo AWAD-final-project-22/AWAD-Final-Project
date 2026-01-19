@@ -1,4 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useAppSelector } from '@/redux/hooks';
+import { selectCurrentUser } from '@/redux/slices/authSlice';
+import {
+  generateCacheKey,
+  logOfflineCache,
+  readCache,
+  STORES,
+  writeCache,
+} from '@/helpers/offlineCache.helper';
 import { AxiosResponse } from 'axios';
 import {
   getWorkflowsByStatus,
@@ -22,12 +32,76 @@ export const workflowKeys = {
 
 // Hook to get workflows by status
 export const useGetWorkflows = (params: IWorkflowParams) => {
+  const { isOnline } = useNetworkStatus();
+  const userId = useAppSelector(selectCurrentUser)?.id || 'anonymous';
+  const queryClient = useQueryClient();
+  const limit = params.limit || 0;
+  const offset = params.offset || 0;
+  const cacheKey = generateCacheKey(userId, params.status, limit, offset);
+  const queryKey = workflowKeys.list(params);
+
   return useQuery({
-    queryKey: workflowKeys.list(params),
+    queryKey,
     queryFn: async () => {
-      const response: AxiosResponse<IWorkflowResponse> =
-        await getWorkflowsByStatus(params);
-      return response.data;
+      const cached = await readCache<IWorkflowResponse>(STORES.workflows, cacheKey);
+      logOfflineCache('workflows cache read', {
+        cacheKey,
+        status: params.status,
+        limit,
+        offset,
+        hit: !!cached,
+      });
+      if (!isOnline) {
+        logOfflineCache('workflows offline return', { cacheKey, status: params.status });
+        return (
+          cached || {
+            data: [],
+            pagination: {
+              total: 0,
+              limit,
+              offset,
+              hasMore: false,
+            },
+          }
+        );
+      }
+
+      const fetchAndUpdate = async () => {
+        logOfflineCache('workflows fetch start', {
+          cacheKey,
+          status: params.status,
+        });
+        const response: AxiosResponse<IWorkflowResponse> =
+          await getWorkflowsByStatus(params);
+        await writeCache(STORES.workflows, cacheKey, response.data);
+        queryClient.setQueryData(queryKey, response.data);
+        logOfflineCache('workflows fetch success', {
+          cacheKey,
+          status: params.status,
+          count: response.data?.data?.length,
+        });
+        return response.data;
+      };
+
+      if (cached) {
+        logOfflineCache('workflows return cached', {
+          cacheKey,
+          status: params.status,
+        });
+        setTimeout(() => {
+          logOfflineCache('workflows background fetch', {
+            cacheKey,
+            status: params.status,
+          });
+          fetchAndUpdate().catch((error) => {
+            console.warn('[offline-cache] workflow refresh failed', error);
+          });
+        }, 0);
+        return cached;
+      }
+
+      logOfflineCache('workflows cache miss', { cacheKey, status: params.status });
+      return fetchAndUpdate();
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

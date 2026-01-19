@@ -3,9 +3,10 @@
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { useLogout } from '@/hooks/useLogout';
 import { breakpoints } from '@/themes/breakpoint';
-import { Layout } from 'antd';
-import React, { useState } from 'react';
+import { App, Layout } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { ComposeEmailModal } from './components/ComposeEmailModal';
 import { EmailDetailPanel } from './components/EmailDetailPanel';
 import { EmailListPanel } from './components/EmailListPanel';
@@ -13,8 +14,11 @@ import { MobileHeaderBar } from './components/MobileHeaderBar';
 import { Sidebar } from './components/SideBar';
 import { useInbox } from './hooks/useInbox';
 import { useInboxKeyboardNav } from './hooks/useInboxKeyboardNav';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { DivEmail, StyledLayout } from './styles/InboxPage.style';
 import { PARAMS_URL } from '@/constants/params.constant';
+import { API_PATH } from '@/constants/apis.constant';
+import { clearExpiredCache } from '@/helpers/offlineCache.helper';
 
 const InboxPage: React.FC = () => {
   const windowSize = useWindowSize();
@@ -22,6 +26,10 @@ const InboxPage: React.FC = () => {
   const [openComposeModal, setOpenComposeModal] = useState(false);
   const searchParams = useSearchParams();
   const emailIdFromUrl = searchParams.get(PARAMS_URL.EMAIL_ID);
+  const { notification } = App.useApp();
+  const { isOnline } = useNetworkStatus();
+  const prevOnlineRef = useRef(isOnline);
+  const queryClient = useQueryClient();
 
   const { handleLogout, isLoggingOut } = useLogout();
 
@@ -57,6 +65,41 @@ const InboxPage: React.FC = () => {
     handleDeleteEmail,
   } = useInbox({ isMobile, mailID: emailIdFromUrl || undefined });
 
+  useEffect(() => {
+    const wasOnline = prevOnlineRef.current;
+    if (wasOnline === isOnline) return;
+
+    if (!isOnline) {
+      notification.warning({
+        message: 'Offline mode',
+        description: 'Showing cached data.',
+      });
+    } else {
+      notification.success({
+        message: 'Back online',
+        description: 'Data will refresh automatically.',
+      });
+      (async () => {
+        try {
+          await clearExpiredCache();
+        } catch (error) {
+          console.warn('[offline-cache] cleanup failed', error);
+        }
+        queryClient.invalidateQueries({
+          queryKey: [API_PATH.EMAIL.GET_LIST_MAILBOXES.API_KEY],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [API_PATH.EMAIL.GET_LIST_EMAILS_MAILBOX.API_KEY],
+        });
+        queryClient.invalidateQueries({
+          queryKey: [API_PATH.EMAIL.GET_DETAIL_MAIL.API_KEY],
+        });
+      })();
+    }
+
+    prevOnlineRef.current = isOnline;
+  }, [isOnline, notification, queryClient]);
+
   useInboxKeyboardNav({
     emails: filteredEmails,
     selectedEmailId: selectedEmail,
@@ -83,6 +126,7 @@ const InboxPage: React.FC = () => {
           handleSearch={handleSearch}
           onLogout={handleLogout}
           isLoggingOut={isLoggingOut}
+          isOnline={isOnline}
         />
 
         <Layout>
@@ -92,6 +136,7 @@ const InboxPage: React.FC = () => {
             showEmailList={showEmailList}
             handleBackToList={handleBackToList}
             isMobile={isMobile}
+            isOnline={isOnline}
           />
 
           <DivEmail $isMobile={isMobile}>

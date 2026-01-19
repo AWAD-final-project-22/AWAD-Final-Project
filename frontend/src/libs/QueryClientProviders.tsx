@@ -1,6 +1,7 @@
 'use client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState, ReactNode } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
+import { clearExpiredCache } from '@/helpers/offlineCache.helper';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -18,6 +19,17 @@ export default function QueryClientProviders({ children }: ProvidersProps) {
         },
       }),
   );
+
+  useEffect(() => {
+    const cleanup = async () => {
+      try {
+        await clearExpiredCache();
+      } catch (error) {
+        console.warn('[offline-cache] startup cleanup failed', error);
+      }
+    };
+    cleanup();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

@@ -1,4 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useAppSelector } from '@/redux/hooks';
+import { selectCurrentUser } from '@/redux/slices/authSlice';
+import {
+  generateCacheKey,
+  logOfflineCache,
+  readCache,
+  STORES,
+  writeCache,
+} from '@/helpers/offlineCache.helper';
 import { AxiosResponse } from 'axios';
 import {
   getKanbanColumns,
@@ -19,12 +29,48 @@ export const kanbanKeys = {
 };
 
 export const useGetKanbanColumns = () => {
+  const { isOnline } = useNetworkStatus();
+  const userId = useAppSelector(selectCurrentUser)?.id || 'anonymous';
+  const queryClient = useQueryClient();
+  const queryKey = [...kanbanKeys.columns(), userId];
+  const cacheKey = generateCacheKey(userId);
+
   return useQuery({
-    queryKey: kanbanKeys.columns(),
+    queryKey,
     queryFn: async () => {
-      const response: AxiosResponse<IKanbanColumnsResponse> =
-        await getKanbanColumns();
-      return response.data.data;
+      const cached = await readCache<IKanbanColumn[]>(STORES.kanbanColumns, cacheKey);
+      logOfflineCache('kanban columns cache read', { cacheKey, hit: !!cached });
+      if (!isOnline) {
+        logOfflineCache('kanban columns offline return', { cacheKey, hit: !!cached });
+        return cached || [];
+      }
+
+      const fetchAndUpdate = async () => {
+        logOfflineCache('kanban columns fetch start', { cacheKey });
+        const response: AxiosResponse<IKanbanColumnsResponse> =
+          await getKanbanColumns();
+        await writeCache(STORES.kanbanColumns, cacheKey, response.data.data);
+        queryClient.setQueryData(queryKey, response.data.data);
+        logOfflineCache('kanban columns fetch success', {
+          cacheKey,
+          count: response.data?.data?.length,
+        });
+        return response.data.data;
+      };
+
+      if (cached) {
+        logOfflineCache('kanban columns return cached', { cacheKey });
+        setTimeout(() => {
+          logOfflineCache('kanban columns background fetch', { cacheKey });
+          fetchAndUpdate().catch((error) => {
+            console.warn('[offline-cache] kanban columns refresh failed', error);
+          });
+        }, 0);
+        return cached;
+      }
+
+      logOfflineCache('kanban columns cache miss', { cacheKey });
+      return fetchAndUpdate();
     },
     staleTime: 1000 * 60 * 5,
   });
