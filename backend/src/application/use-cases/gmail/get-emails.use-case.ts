@@ -1,4 +1,4 @@
-import { IGmailService, GmailMessage, ListMessagesParams } from '../../ports/gmail.port';
+import { GmailMessage, ListMessagesParams } from '../../ports/gmail.port';
 import { BaseGmailUseCase } from './base-gmail.use-case';
 
 const SYSTEM_LABELS_MAP: Record<string, string> = {
@@ -11,33 +11,67 @@ const SYSTEM_LABELS_MAP: Record<string, string> = {
   important: 'IMPORTANT',
 };
 
+export interface EmailFilterOptions {
+  sortBy?: 'date_newest' | 'date_oldest';
+  unreadOnly?: boolean;
+  attachmentsOnly?: boolean;
+}
+
 export class GetEmailsUseCase extends BaseGmailUseCase {
   async execute(
     userId: string, 
     mailboxId: string = 'INBOX',
     limit: number = 20,
-    pageToken?: string,
+    offset: number = 0,
+    filterOptions?: EmailFilterOptions,
   ) {
     const accessToken = await this.getAccessToken(userId);
 
     const normalizedId = mailboxId.toLowerCase();
     const labelId = SYSTEM_LABELS_MAP[normalizedId] || mailboxId;
 
-    // Params cho Gmail API
+    // Build Gmail search query based on filters (without label - use labelIds instead)
+    let query = '';
+    
+    if (filterOptions?.unreadOnly) {
+      query += 'is:unread';
+    }
+    
+    if (filterOptions?.attachmentsOnly) {
+      query += query ? ' has:attachment' : 'has:attachment';
+    }
+
+    const fetchLimit = Math.min(limit + offset, 500);
+
     const params: ListMessagesParams = {
       userId: 'me',
-      labelIds: [labelId],
-      maxResults: limit,
-      pageToken: pageToken,
+      labelIds: [labelId], // Use labelIds instead of query for label filtering
+      query: query || undefined, // Only include query if we have filters
+      maxResults: fetchLimit,
     };
 
     const response = await this.gmailService.listMessages(accessToken, params);
 
+    let emails = response.messages.map((msg) => this.mapToEmailEntity(msg, mailboxId));
+
+    if (filterOptions?.sortBy === 'date_oldest') {
+      emails = emails.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    } else {
+      // Default: newest first
+      emails = emails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }
+
+    // Apply offset and limit
+    const paginatedEmails = emails.slice(offset, offset + limit);
+    const hasMore = emails.length > offset + limit;
+
     return {
-      emails: response.messages.map((msg) => this.mapToEmailEntity(msg, mailboxId)),
-      nextPageToken: response.nextPageToken,
+      emails: paginatedEmails,
       limit,
+      offset,
       total: response.resultSizeEstimate || 0,
+      hasMore,
+      filters: filterOptions,
     };
   }
 
@@ -46,6 +80,9 @@ export class GetEmailsUseCase extends BaseGmailUseCase {
     const getHeader = (name: string) =>
       headers.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ||
       '';
+
+    // Check for attachments
+    const hasAttachment = this.hasAttachment(msg.payload);
 
     return {
       id: msg.id,
@@ -59,7 +96,26 @@ export class GetEmailsUseCase extends BaseGmailUseCase {
       preview: msg.snippet,
       isRead: !(msg.labelIds?.includes('UNREAD') ?? false),
       isStarred: msg.labelIds?.includes('STARRED') ?? false,
+      hasAttachment,
       mailboxId: mailboxId,
     };
+  }
+
+  private hasAttachment(payload: any): boolean {
+    if (!payload?.parts) return false;
+    
+    const checkParts = (parts: any[]): boolean => {
+      for (const part of parts) {
+        if (part.filename && part.filename.trim() !== '') {
+          return true;
+        }
+        if (part.parts && checkParts(part.parts)) {
+          return true;
+        }
+      }
+      return false;
+    };
+    
+    return checkParts(payload.parts);
   }
 }

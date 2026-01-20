@@ -2,6 +2,10 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
+
+# quan trọng: đưa schema vào trước npm ci để prisma generate đúng
+COPY prisma ./prisma
+
 RUN npm ci --silent
 
 COPY . .
@@ -17,7 +21,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/generated ./generated
+# COPY --from=builder /app/generated ./generated
 
 EXPOSE 3000
 

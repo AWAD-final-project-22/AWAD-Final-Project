@@ -6,15 +6,16 @@ import {
   FileOutlined,
   FolderOutlined,
   InboxOutlined,
+  LogoutOutlined,
   SendOutlined,
   StarOutlined,
 } from '@ant-design/icons';
-import { Button, Drawer, Input, Menu } from 'antd';
+import { Button, Drawer, Menu, Tag } from 'antd';
 import React from 'react';
 import { IMailbox } from '../interfaces/mailAPI.interface';
 import { DesktopSider, SidebarContent } from '../styles/InboxPage.style';
-
-const { Search } = Input;
+import { LogoutButtonContainer } from '../styles/LogoutButton.style';
+import { SearchWithSuggestions } from '@/features/search/components/SearchWithSuggestions';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -26,6 +27,10 @@ interface SidebarProps {
   searchText: string;
   setSearchText: (value: string) => void;
   setOpenComposeModal?: (value: boolean) => void;
+  handleSearch?: (query: string) => void;
+  onLogout?: () => void;
+  isLoggingOut?: boolean;
+  isOnline?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -38,6 +43,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   searchText,
   setSearchText,
   setOpenComposeModal,
+  handleSearch,
+  onLogout,
+  isLoggingOut,
+  isOnline = true,
 }) => {
   const items = mailboxes?.map((mailbox) => {
     let icon: React.ReactNode;
@@ -70,6 +79,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const sidebarContent = (
     <SidebarContent>
       <div style={{ padding: '16px', textAlign: 'center' }}>
+        {!isOnline && (
+          <Tag color='red' style={{ marginBottom: 8 }}>
+            Offline
+          </Tag>
+        )}
         <Button
           type='primary'
           icon={<EditOutlined />}
@@ -79,13 +93,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           {(!collapsed || isMobile) && 'Compose'}
         </Button>
-        <Search
-          placeholder='Search...'
-          onSearch={setSearchText}
+        <SearchWithSuggestions
+          placeholder='Search emails...'
+          onSearch={handleSearch || setSearchText}
           value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
+          onChange={setSearchText}
+          onClear={() => setSearchText('')}
           style={{ marginBottom: '16px' }}
           allowClear
+          inputId='inbox-search-input'
         />
       </div>
       <Menu
@@ -99,6 +115,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }}
         items={items}
       />
+      {onLogout && (
+        <LogoutButtonContainer>
+          <Button
+            type='default'
+            danger
+            icon={<LogoutOutlined />}
+            block
+            onClick={onLogout}
+            loading={isLoggingOut}
+          >
+            {(!collapsed || isMobile) && 'Logout'}
+          </Button>
+        </LogoutButtonContainer>
+      )}
     </SidebarContent>
   );
 

@@ -7,8 +7,12 @@ import { IGmailService } from '../../ports/gmail.port';
 import { IEncryptionService } from '../../ports/encryption.port';
 import { SendEmailUseCase } from './send-email.use-case';
 import { ReplyEmailUseCase } from './reply-email.use-case';
+import { ForwardEmailUseCase } from './forward-email.use-case';
 import { ModifyEmailUseCase } from './modify-email.use-case';
 import { GetAttachmentUseCase } from './get-attachment.use-case';
+import { SyncEmailsUseCase } from './sync-emails.use-case';
+import { DeleteEmailUseCase } from './delete-email.use-case';
+import { EmbeddingQueueService } from '../../../infrastructure/services/embedding-queue.service';
 
 export const GmailUseCaseProviders = [
   {
@@ -44,8 +48,9 @@ export const GmailUseCaseProviders = [
       userRepo: IUserRepository,
       gmailService: IGmailService,
       encryptionService: IEncryptionService,
-    ) => new GetEmailDetailUseCase(userRepo, gmailService, encryptionService),
-    inject: [IUserRepository, IGmailService, IEncryptionService],
+      emailWorkflowRepo: any,
+    ) => new GetEmailDetailUseCase(userRepo, gmailService, encryptionService, emailWorkflowRepo),
+    inject: [IUserRepository, IGmailService, IEncryptionService, 'IEmailWorkflowRepository'],
   },
   {
     provide: SendEmailUseCase,
@@ -66,6 +71,15 @@ export const GmailUseCaseProviders = [
     inject: [IUserRepository, IGmailService, IEncryptionService],
   },
   {
+    provide: ForwardEmailUseCase,
+    useFactory: (
+      userRepo: IUserRepository,
+      gmailService: IGmailService,
+      encryptionService: IEncryptionService,
+    ) => new ForwardEmailUseCase(userRepo, gmailService, encryptionService),
+    inject: [IUserRepository, IGmailService, IEncryptionService],
+  },
+  {
     provide: ModifyEmailUseCase,
     useFactory: (
       userRepo: IUserRepository,
@@ -83,6 +97,32 @@ export const GmailUseCaseProviders = [
     ) => new GetAttachmentUseCase(userRepo, gmailService, encryptionService),
     inject: [IUserRepository, IGmailService, IEncryptionService],
   },
+  {
+    provide: SyncEmailsUseCase,
+    useFactory: (
+      userRepo: IUserRepository,
+      gmailService: IGmailService,
+      encryptionService: IEncryptionService,
+      emailWorkflowRepo: unknown,
+      embeddingQueueService?: EmbeddingQueueService,
+    ) => new SyncEmailsUseCase(userRepo, gmailService, encryptionService, emailWorkflowRepo as never, embeddingQueueService),
+    inject: [
+      IUserRepository,
+      IGmailService,
+      IEncryptionService,
+      'IEmailWorkflowRepository',
+      { token: EmbeddingQueueService, optional: true },
+    ],
+  },
+  {
+    provide: DeleteEmailUseCase,
+    useFactory: (
+      userRepo: IUserRepository,
+      gmailService: IGmailService,
+      encryptionService: IEncryptionService,
+    ) => new DeleteEmailUseCase(userRepo, gmailService, encryptionService),
+    inject: [IUserRepository, IGmailService, IEncryptionService],
+  },
 ];
 
 export const GmailUseCases = [
@@ -92,6 +132,9 @@ export const GmailUseCases = [
   GetEmailDetailUseCase,
   SendEmailUseCase,
   ReplyEmailUseCase,
+  ForwardEmailUseCase,
   ModifyEmailUseCase,
   GetAttachmentUseCase,
+  SyncEmailsUseCase,
+  DeleteEmailUseCase,
 ];

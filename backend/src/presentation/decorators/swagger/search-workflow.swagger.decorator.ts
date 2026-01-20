@@ -9,17 +9,17 @@ export const ApiSearchWorkflowsDocs = () => {
     ApiTags('Workflows'),
     ApiBearerAuth('JWT-auth'),
     ApiOperation({
-      summary: 'Search workflows with fuzzy matching',
-      description: 'Search workflows by query with fuzzy matching and typo tolerance. Supports partial matches in subject, sender (from), snippet, and AI summary.',
+      summary: 'Fuzzy Search - Search workflows with typo tolerance',
+      description: 'Fuzzy search workflows with typo tolerance and partial matching. Uses PostgreSQL pg_trgm extension for similarity matching. Features: Typo tolerance (e.g., "marketng" → finds "marketing"), Partial matches (e.g., "Nguy" → finds "Nguyễn Văn A", "nguyen@example.com"), Relevance ranking (results sorted by match quality), Searches in: subject (weight 3x), sender/from (weight 2.5x), snippet (weight 1x), AI summary (weight 1.5x)',
     }),
     ApiQuery({
       name: 'query',
       required: true,
-      description: 'Search query with fuzzy matching support',
-      example: 'marketing',
+      description: 'Search query with fuzzy matching and typo tolerance (e.g., "marketng" will find "marketing", "Nguy" will find "Nguyễn")',
+      example: 'marketng',
       type: 'string',
       minLength: 1,
-      maxLength: 100,
+      maxLength: 200,
     }),
     ApiQuery({
       name: 'limit',

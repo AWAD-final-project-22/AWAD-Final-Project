@@ -14,10 +14,27 @@ import { IEncryptionService } from '../application/ports/encryption.port';
 import { GmailServiceImpl } from './services/gmail.service';
 import { IGmailService } from '../application/ports/gmail.port';
 import { EmailWorkflowRepositoryImpl } from './repositories/emailWorkflowRepository.impl';
+import type { IEmailWorkflowRepository } from '../domain/repositories/IEmailWorkFflowRepository';
 import { AiSummaryService } from './services/ai-summary.service';
 import { EmailProcessorService } from './services/email-processor.service';
 import { InboxWorkflowService } from './services/inbox-workflow.service';
 import { GmailTokenService } from './services/gmail-token.service';
+import { GmailLabelSyncService } from './services/gmail-label-sync.service';
+import {
+  KanbanColumnRepositoryImpl,
+  KanbanCardRepositoryImpl,
+} from './repositories/kanban.repository.impl';
+import { RedisService } from './services/redis.service';
+import { GeminiEmbeddingService } from './services/gemini-embedding.service';
+import type { IEmbeddingPort } from '../application/ports/embedding.port';
+import { EmbeddingQueue } from './queues/embedding.queue';
+import { EmbeddingProcessorService } from './services/embedding-processor.service';
+import { EmbeddingWorker } from './workers/embedding.worker';
+import { EmbeddingQueueService } from './services/embedding-queue.service';
+import { SummaryQueue } from './queues/summary.queue';
+import { SummaryProcessorService } from './services/summary-processor.service';
+import { SummaryWorker } from './workers/summary.worker';
+import { AutoReturnService } from './services/auto-return.service';
 
 @Module({
   imports: [
@@ -60,9 +77,37 @@ import { GmailTokenService } from './services/gmail-token.service';
       provide: 'IAiSummaryPort',
       useClass: AiSummaryService,
     },
+    {
+      provide: 'IKanbanColumnRepository',
+      useClass: KanbanColumnRepositoryImpl,
+    },
+    {
+      provide: 'IKanbanCardRepository',
+      useClass: KanbanCardRepositoryImpl,
+    },
     GmailTokenService,
+    GmailLabelSyncService,
     EmailProcessorService,
     InboxWorkflowService,
+    RedisService,
+    {
+      provide: 'IEmbeddingPort',
+      useClass: GeminiEmbeddingService,
+    },
+    EmbeddingQueue,
+    EmbeddingProcessorService,
+    EmbeddingWorker,
+    {
+      provide: EmbeddingQueueService,
+      useFactory: (embeddingQueue?: EmbeddingQueue) => new EmbeddingQueueService(embeddingQueue),
+      inject: [{ token: EmbeddingQueue, optional: true }],
+    },
+    // Summary Worker System
+    SummaryQueue,
+    SummaryProcessorService,
+    SummaryWorker,
+    // Auto Return Service
+    AutoReturnService,
   ],
   exports: [
     PrismaService,
@@ -73,10 +118,23 @@ import { GmailTokenService } from './services/gmail-token.service';
     IGmailService,
     'IEmailWorkflowRepository',
     'IAiSummaryPort',
+    'IKanbanColumnRepository',
+    'IKanbanCardRepository',
     GmailTokenService,
+    GmailLabelSyncService,
     EmailProcessorService,
     InboxWorkflowService,
-    JwtModule, 
-  ]
+    RedisService,
+    'IEmbeddingPort',
+    EmbeddingQueue,
+    EmbeddingProcessorService,
+    EmbeddingWorker,
+    EmbeddingQueueService,
+    // Summary Worker System
+    SummaryQueue,
+    SummaryProcessorService,
+    SummaryWorker,
+    JwtModule,
+  ],
 })
 export class InfrastructureModule {}

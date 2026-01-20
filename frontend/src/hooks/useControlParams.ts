@@ -22,29 +22,21 @@ export const useControlParams = () => {
 
   const updateSearchQuery = (updatedQuery: any, isPage?: boolean) => {
     const keys = Array.from(new Set(searchParams.keys()));
-
-    // Xây dựng currentParams, lưu ý xử lý các key trùng lặp
     const currentParams: { [key: string]: string | string[] } = {};
     keys.forEach((key) => {
       const values = searchParams.getAll(key);
-      // Nếu key có nhiều giá trị, lưu dưới dạng mảng
-      // Nếu chỉ có một giá trị, lưu dưới dạng string
       currentParams[key] = values.length > 1 ? values : values[0];
     });
-    // console.log('Current params before update:', currentParams)
 
     const combinedParams = {
       ...currentParams,
       ...updatedQuery,
     };
 
-    // console.log('updatedQuery', updatedQuery, 'combinedParams', combinedParams)
-
     const params = new URLSearchParams();
 
     Object.entries(combinedParams).forEach(([key, value]) => {
       if (value === null || value === undefined || value === '') {
-        // Do nothing
       } else if (Array.isArray(value)) {
         params.delete(key);
         value

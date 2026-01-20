@@ -1,5 +1,5 @@
 'use client';
-import { Button, Checkbox, Pagination, Tooltip, Typography } from 'antd';
+import { App, Button, Checkbox, Pagination, Tooltip, Typography } from 'antd';
 import { IEmail, IEmailResponse } from '../interfaces/mailAPI.interface';
 import { UrgencyBadge } from './UrgencyBadge';
 import {
@@ -14,6 +14,7 @@ import {
 
 import {
   DeleteOutlined,
+  ExclamationCircleOutlined,
   MailOutlined,
   PaperClipOutlined,
   ReloadOutlined,
@@ -38,6 +39,9 @@ interface EmailListPanelProps {
   isMobile?: boolean;
   selectedEmail: IEmail | undefined;
   handlePageChange: (page: number) => void;
+  handleDeleteEmail: (emailId: string) => Promise<void>;
+  handleMarkAsRead?: (emailIds: string[]) => Promise<void>;
+  handleToggleStar?: (emailId: string, isStarred: boolean) => Promise<void>;
 }
 
 export const EmailListPanel: React.FC<EmailListPanelProps> = ({
@@ -52,7 +56,41 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
   isEmailsLoading = false,
   handlePageChange,
   emails,
+  handleDeleteEmail,
+  handleMarkAsRead,
+  handleToggleStar,
 }) => {
+  const { modal } = App.useApp();
+
+  const handleMarkAsReadClick = async () => {
+    const selectedEmails = Array.from(checkedEmails);
+    if (selectedEmails.length === 0 || !handleMarkAsRead) {
+      return;
+    }
+    await handleMarkAsRead(selectedEmails);
+  };
+
+  const showDeleteConfirm = () => {
+    const selectedEmails = Array.from(checkedEmails);
+    if (selectedEmails.length === 0) {
+      return;
+    }
+
+    modal.confirm({
+      title: 'Delete Email(s)',
+      icon: <ExclamationCircleOutlined />,
+      content: `Are you sure you want to delete ${selectedEmails.length} email(s)?`,
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        for (const emailId of selectedEmails) {
+          await handleDeleteEmail(emailId);
+        }
+      },
+    });
+  };
+
   const renderEmailList = () => {
     if (!filteredEmails) {
       return <EmptyState message='No emails to display' />;
@@ -67,6 +105,8 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
             <EmailItem
               key={email.id}
               $selected={selectedEmail?.id === email.id}
+              $isRead={email.isRead}
+              data-email-id={email.id}
               onClick={() => handleEmailClick(email.id)}
             >
               <div
@@ -104,7 +144,9 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
                       style={{ marginRight: 8 }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Toggle star status
+                        if (handleToggleStar) {
+                          handleToggleStar(email.id, email.isStarred || false);
+                        }
                       }}
                     />
                   </Tooltip>
@@ -123,7 +165,7 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
                     >
                       {email.sender.split('<')[0].trim()}
                     </EmailSubject>
-                    <EmailTime>{formatDate(email.timestamp)}</EmailTime>
+                    <EmailTime>{formatDate(email.date)}</EmailTime>
                   </div>
                   <div
                     style={{
@@ -139,9 +181,18 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
                           {email.subject}
                         </Text>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                        }}
+                      >
                         {email.urgencyScore !== undefined && (
-                          <UrgencyBadge urgencyScore={email.urgencyScore} showLabel={false} />
+                          <UrgencyBadge
+                            urgencyScore={email.urgencyScore}
+                            showLabel={false}
+                          />
                         )}
                         <Text type='secondary'>
                           {email.aiSummary
@@ -149,8 +200,8 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
                               ? `✨ ${email.aiSummary.substring(0, 80)}...`
                               : `✨ ${email.aiSummary}`
                             : email.preview.length > 80
-                            ? `${email.preview.substring(0, 80)}...`
-                            : email.preview}
+                              ? `${email.preview.substring(0, 80)}...`
+                              : email.preview}
                         </Text>
                       </div>
                     </div>
@@ -196,10 +247,19 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
           <Button type='text' icon={<ReloadOutlined />} />
         </Tooltip>
         <Tooltip title='Delete selected'>
-          <Button type='text' icon={<DeleteOutlined />} />
+          <Button
+            type='text'
+            icon={<DeleteOutlined />}
+            onClick={showDeleteConfirm}
+          />
         </Tooltip>
         <Tooltip title='Mark as read'>
-          <Button type='text' icon={<MailOutlined />} />
+          <Button
+            type='text'
+            icon={<MailOutlined />}
+            onClick={handleMarkAsReadClick}
+            disabled={checkedEmails.size === 0}
+          />
         </Tooltip>
         <div style={{ flex: 1 }} />
         <ViewToggle currentView='list' />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Skeleton } from 'antd';
+import { Skeleton, Tooltip } from 'antd';
 import {
   SummaryContainer,
   SummaryHeader,
@@ -11,7 +11,6 @@ interface SummaryDisplayProps {
   summary?: string;
   preview?: string;
   isLoading?: boolean;
-  maxLength?: number;
   showIcon?: boolean;
 }
 
@@ -19,7 +18,6 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
   summary,
   preview,
   isLoading = false,
-  maxLength = 150,
   showIcon = true,
 }) => {
   if (isLoading) {
@@ -31,10 +29,6 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
   }
 
   const displayText = summary || preview || 'No summary available';
-  const truncatedText =
-    displayText.length > maxLength
-      ? `${displayText.substring(0, maxLength)}...`
-      : displayText;
 
   return (
     <SummaryContainer>
@@ -43,9 +37,13 @@ export const SummaryDisplay: React.FC<SummaryDisplayProps> = ({
         <span>{summary ? 'AI Summary' : 'Preview'}</span>
       </SummaryHeader>
       {summary ? (
-        <SummaryText>{truncatedText}</SummaryText>
+        <Tooltip title={displayText}>
+          <SummaryText>{displayText}</SummaryText>
+        </Tooltip>
       ) : (
-        <PreviewText>{truncatedText}</PreviewText>
+        <Tooltip title={displayText}>
+          <PreviewText>{displayText}</PreviewText>
+        </Tooltip>
       )}
     </SummaryContainer>
   );

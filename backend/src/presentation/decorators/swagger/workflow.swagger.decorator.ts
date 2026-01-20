@@ -6,12 +6,13 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { WorkflowStatus } from '@prisma/client';
+import { WorkflowSortBy } from '../../dtos/request/get-workflows-filter.dto';
 
 export function ApiGetWorkflowsDocs() {
   return applyDecorators(
     ApiOperation({
-      summary: 'Get email workflows by status',
-      description: 'INBOX: fetch từ Gmail + AI summarize | TODO/DONE/SNOOZED: query DB',
+      summary: 'Get email workflows by status with sorting and filtering',
+      description: 'Get workflows with optional sorting (date_newest/date_oldest) and filtering (unreadOnly, attachmentsOnly). INBOX: fetch từ Gmail + AI summarize | TODO/DONE/SNOOZED: query DB. Filters and sorting apply in real-time.',
     }),
     ApiQuery({
       name: 'status',
@@ -32,6 +33,27 @@ export function ApiGetWorkflowsDocs() {
       required: false,
       example: 0,
       description: 'Items to skip (default: 0)',
+    }),
+    ApiQuery({
+      name: 'sortBy',
+      enum: WorkflowSortBy,
+      required: false,
+      description: 'Sort workflows by date: date_newest (newest first) or date_oldest (oldest first)',
+      example: WorkflowSortBy.DATE_NEWEST,
+    }),
+    ApiQuery({
+      name: 'unreadOnly',
+      type: Boolean,
+      required: false,
+      example: false,
+      description: 'Show only unread emails (filter)',
+    }),
+    ApiQuery({
+      name: 'attachmentsOnly',
+      type: Boolean,
+      required: false,
+      example: false,
+      description: 'Show only emails with attachments (filter)',
     }),
     ApiResponse({
       status: 200,
@@ -63,6 +85,13 @@ export function ApiGetWorkflowsDocs() {
             offset: 0,
             hasMore: true,
           },
+          sort: {
+            sortBy: 'date_newest',
+          },
+          filters: {
+            unreadOnly: false,
+            attachmentsOnly: false,
+          },
         },
       },
     }),
@@ -93,6 +122,57 @@ export function ApiUpdateWorkflowStatusDocs() {
     }),
     ApiResponse({ status: 200, description: 'Status updated successfully', schema: { example: { success: true, data: { id: 'cm4h8x9z00001l408gq5c8h9j', status: 'TODO', updatedAt: '2025-12-10T10:30:00.000Z' } } } }),
     ApiResponse({ status: 400, description: 'Bad Request - Invalid status or input' }),
+    ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' }),
+    ApiResponse({ status: 404, description: 'Not Found - Workflow not found or not owned by user' })
+  );
+}
+
+export function ApiUpdateWorkflowSnoozeDocs() {
+  return applyDecorators(
+    ApiOperation({ 
+      summary: 'Snooze workflow until specified date', 
+      description: 'Snooze workflow đến một thời điểm cụ thể. Status Kanban sẽ được giữ nguyên, chỉ set snoozedUntil.' 
+    }),
+    ApiBody({
+      schema: {
+        type: 'object',
+        properties: {
+          snoozedUntil: {
+            type: 'string',
+            format: 'date-time',
+            example: '2025-01-25T10:00:00.000Z',
+            description: 'Ngày giờ kết thúc snooze (ISO 8601 format). Phải là thời điểm trong tương lai.',
+          },
+        },
+        required: ['snoozedUntil'],
+      },
+      examples: {
+        tomorrow: { 
+          summary: 'Snooze đến ngày mai', 
+          value: { snoozedUntil: '2025-01-21T09:00:00.000Z' } 
+        },
+        nextWeek: { 
+          summary: 'Snooze đến tuần sau', 
+          value: { snoozedUntil: '2025-01-27T09:00:00.000Z' } 
+        },
+      },
+    }),
+    ApiResponse({ 
+      status: 200, 
+      description: 'Workflow snoozed successfully', 
+      schema: { 
+        example: { 
+          success: true, 
+          data: { 
+            id: 'cm4h8x9z00001l408gq5c8h9j', 
+            status: 'IN_PROGRESS', // Status giữ nguyên
+            snoozedUntil: '2025-01-25T10:00:00.000Z',
+            updatedAt: '2025-01-20T10:30:00.000Z' 
+          } 
+        } 
+      } 
+    }),
+    ApiResponse({ status: 400, description: 'Bad Request - Invalid date format hoặc ngày trong quá khứ' }),
     ApiResponse({ status: 401, description: 'Unauthorized - Invalid token' }),
     ApiResponse({ status: 404, description: 'Not Found - Workflow not found or not owned by user' })
   );

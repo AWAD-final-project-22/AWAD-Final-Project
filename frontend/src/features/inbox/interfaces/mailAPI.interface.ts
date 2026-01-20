@@ -9,7 +9,7 @@ export interface IEmail {
   sender: string;
   subject: string;
   preview: string;
-  timestamp: string;
+  date: string;
   isRead?: boolean;
   isStarred?: boolean;
   hasAttachment?: boolean;
@@ -61,6 +61,15 @@ export interface ISendMessageParams {
 
 export interface IReplyEmailParams {
   to?: string[];
+  cc?: string[];
+  bcc?: string[];
+  body: string;
+  includeOriginal?: boolean;
+  attachments?: IEmailAttachment[];
+}
+
+export interface IForwardEmailParams {
+  to: string[];
   cc?: string[];
   bcc?: string[];
   body: string;

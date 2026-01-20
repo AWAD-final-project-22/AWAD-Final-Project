@@ -54,7 +54,8 @@ export const BoardContainer = styled.div`
 
 export const ColumnContainer = styled.div<{ $isDraggingOver?: boolean }>`
   flex: 0 0 340px;
-  background: ${({ $isDraggingOver }) => ($isDraggingOver ? '#e6f7ff' : '#f8f9fc')};
+  background: ${({ $isDraggingOver }) =>
+    $isDraggingOver ? '#e6f7ff' : '#f8f9fc'};
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -69,19 +70,19 @@ export const ColumnHeader = styled.div<{ $status: string }>`
   padding: 16px;
   border-bottom: 1px solid #e8e8e8;
   background: ${({ $status }) => {
-        switch ($status) {
-            case 'INBOX':
-                return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            case 'TODO':
-                return 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
-            case 'DONE':
-                return 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
-            case 'SNOOZED':
-                return 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
-            default:
-                return 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)';
-        }
-    }};
+    switch ($status) {
+      case 'INBOX':
+        return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+      case 'TODO':
+        return 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+      case 'DONE':
+        return 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+      case 'SNOOZED':
+        return 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)';
+      default:
+        return 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)';
+    }
+  }};
   border-radius: 12px 12px 0 0;
 `;
 
@@ -119,18 +120,24 @@ export const ColumnContent = styled.div`
   }
 `;
 
-export const CardContainer = styled.div<{ $isDragging?: boolean }>`
+export const CardContainer = styled.div<{
+  $isDragging?: boolean;
+  $isSelected?: boolean;
+}>`
   background: #fff;
   border-radius: 10px;
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: ${({ $isDragging }) =>
-        $isDragging
-            ? '0 8px 24px rgba(0, 0, 0, 0.15)'
-            : '0 2px 8px rgba(0, 0, 0, 0.06)'};
+  box-shadow: ${({ $isDragging, $isSelected }) => {
+    if ($isDragging) return '0 8px 24px rgba(0, 0, 0, 0.15)';
+    if ($isSelected) return '0 0 0 2px rgba(24, 144, 255, 0.25)';
+    return '0 2px 8px rgba(0, 0, 0, 0.06)';
+  }};
   cursor: grab;
   transition: all 0.2s ease;
-  border: 1px solid ${({ $isDragging }) => ($isDragging ? '#1890ff' : '#f0f0f0')};
+  border: 1px solid
+    ${({ $isDragging, $isSelected }) =>
+      $isDragging || $isSelected ? '#1890ff' : '#f0f0f0'};
 
   &:hover {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -241,7 +248,9 @@ export const CardActions = styled.div`
   border-top: 1px solid #f0f0f0;
 `;
 
-export const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' }>`
+export const ActionButton = styled.button<{
+  $variant?: 'primary' | 'secondary';
+}>`
   display: flex;
   align-items: center;
   gap: 4px;
@@ -253,13 +262,12 @@ export const ActionButton = styled.button<{ $variant?: 'primary' | 'secondary' }
   cursor: pointer;
   transition: all 0.2s ease;
   background: ${({ $variant }) =>
-        $variant === 'primary' ? '#667eea' : 'transparent'};
-  color: ${({ $variant }) =>
-        $variant === 'primary' ? '#fff' : '#666'};
+    $variant === 'primary' ? '#667eea' : 'transparent'};
+  color: ${({ $variant }) => ($variant === 'primary' ? '#fff' : '#666')};
 
   &:hover {
     background: ${({ $variant }) =>
-        $variant === 'primary' ? '#5a6fd6' : '#f5f5f5'};
+      $variant === 'primary' ? '#5a6fd6' : '#f5f5f5'};
   }
 `;
 
@@ -300,6 +308,37 @@ export const ViewToggle = styled.div`
 `;
 
 export const SearchInput = styled.div`
-  flex: 1;
-  max-width: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  max-width: 700px;
+`;
+
+export const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px;
+`;
+
+export const FilterItem = styled.div`
+  display: flex;
+  align-items: center;
+
+  .filter-label {
+    font-size: 14px;
+    color: #595959;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ant-select {
+    min-width: 150px;
+  }
+
+  .ant-switch {
+    margin-left: 4px;
+  }
 `;

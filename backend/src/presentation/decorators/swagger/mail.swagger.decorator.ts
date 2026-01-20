@@ -9,7 +9,10 @@ import {
 } from '@nestjs/swagger';
 import { SendEmailDto } from '../../dtos/request/send-email.dto';
 import { ReplyEmailDto } from '../../dtos/request/reply-email.dto';
+import { ForwardEmailDto } from '../../dtos/request/forward-email.dto';
 import { ModifyEmailDto } from '../../dtos/request/modify-email.dto';
+import { SyncEmailsDto } from '../../dtos/request/sync-emails.dto';
+import { SyncEmailsResponseDto } from '../../dtos/response/sync-emails.response.dto';
 
 export const ApiGetMailboxes = () =>
   applyDecorators(
@@ -64,8 +67,8 @@ export const ApiGetEmailDetail = () =>
 export const ApiGetEmails = () =>
   applyDecorators(
     ApiOperation({
-      summary: 'Get emails from a mailbox',
-      description: 'Retrieve paginated list of emails from a specific mailbox/label using Gmail API pageToken',
+      summary: 'Get emails from a mailbox with filtering and sorting',
+      description: 'Retrieve paginated list of emails from a specific mailbox/label with filtering and sorting options',
     }),
     ApiParam({
       name: 'mailboxId',
@@ -79,14 +82,35 @@ export const ApiGetEmails = () =>
       example: 20,
     }),
     ApiQuery({
-      name: 'pageToken',
+      name: 'offset',
       required: false,
-      description: 'Page token from previous response for next page',
-      example: 'CAMSDCIQGiYKABIAGAEgACgA',
+      description: 'Number of emails to skip (for pagination)',
+      example: 0,
+    }),
+    ApiQuery({
+      name: 'sortBy',
+      required: false,
+      description: 'Sort emails by date',
+      enum: ['date_newest', 'date_oldest'],
+      example: 'date_newest',
+    }),
+    ApiQuery({
+      name: 'unreadOnly',
+      required: false,
+      description: 'Show only unread emails',
+      type: 'boolean',
+      example: false,
+    }),
+    ApiQuery({
+      name: 'attachmentsOnly',
+      required: false,
+      description: 'Show only emails with attachments',
+      type: 'boolean',
+      example: false,
     }),
     ApiResponse({
       status: 200,
-      description: 'List of emails with pagination info',
+      description: 'List of emails with pagination info and applied filters',
       schema: {
         example: {
           emails: [
@@ -98,11 +122,18 @@ export const ApiGetEmails = () =>
               snippet: 'Email preview text...',
               isRead: true,
               isStarred: false,
+              hasAttachment: true,
             },
           ],
-          nextPageToken: 'CAMSDCIQGiYKABIAGAEgACgA',
           limit: 20,
+          offset: 0,
           total: 150,
+          hasMore: true,
+          filters: {
+            sortBy: 'date_newest',
+            unreadOnly: false,
+            attachmentsOnly: false,
+          },
         },
       },
     }),
@@ -225,6 +256,72 @@ export const ApiReplyEmail = () =>
     ApiResponse({ status: 404, description: 'Original email not found' }),
   );
 
+export const ApiForwardEmail = () =>
+  applyDecorators(
+    ApiOperation({
+      summary: 'Forward an email',
+      description: 'Forward an existing email to new recipients with optional file attachments',
+    }),
+    ApiParam({ name: 'id', description: 'Original email message ID to forward', example: '18c8f1234567890a' }),
+    ApiConsumes('multipart/form-data'),
+    ApiBody({
+      schema: {
+        type: 'object',
+        properties: {
+          to: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Recipient email addresses',
+            example: ['recipient@example.com']
+          },
+          cc: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'CC recipients'
+          },
+          bcc: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'BCC recipients'
+          },
+          body: {
+            type: 'string',
+            description: 'Forward message/comment (HTML supported)',
+            example: '<p>Please see the email below.</p>'
+          },
+          includeOriginal: {
+            type: 'boolean',
+            description: 'Include original message in forward',
+            default: true
+          },
+          files: {
+            type: 'array',
+            items: {
+              type: 'string',
+              format: 'binary'
+            },
+            description: 'File attachments (upload files directly)'
+          }
+        },
+        required: ['to', 'body']
+      }
+    }),
+    ApiResponse({
+      status: 201,
+      description: 'Email forwarded successfully',
+      schema: {
+        example: {
+          success: true,
+          messageId: '18c8f9876543210c',
+          threadId: null,
+        },
+      },
+    }),
+    ApiResponse({ status: 400, description: 'Bad request - Invalid forward data' }),
+    ApiResponse({ status: 401, description: 'Unauthorized' }),
+    ApiResponse({ status: 404, description: 'Original email not found' }),
+  );
+
 export const ApiModifyEmail = () =>
   applyDecorators(
     ApiOperation({
@@ -286,5 +383,43 @@ export const ApiGetAttachment = () =>
     ApiResponse({ status: 401, description: 'Unauthorized' }),
     ApiResponse({ status: 404, description: 'Attachment not found' }),
     ApiResponse({ status: 500, description: 'Failed to retrieve attachment' }),
+  );
+
+export const ApiSyncEmails = () =>
+  applyDecorators(
+    ApiOperation({
+      summary: 'Sync emails from Gmail to database',
+      description: 'Fetch the latest emails from Gmail and save them to the database for workflow management',
+    }),
+    ApiResponse({
+      status: 200,
+      description: 'Emails synced successfully',
+      type: SyncEmailsResponseDto,
+    }),
+    ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing token' }),
+    ApiResponse({ status: 404, description: 'User not found or not linked with Google' }),
+    ApiResponse({ status: 500, description: 'Failed to sync emails' }),
+  );
+
+export const ApiDeleteEmail = () =>
+  applyDecorators(
+    ApiOperation({
+      summary: 'Delete an email',
+      description: 'Move email to trash by adding TRASH label and removing INBOX label',
+    }),
+    ApiParam({ name: 'id', description: 'Email message ID to delete', example: '18c8f1234567890a' }),
+    ApiResponse({
+      status: 200,
+      description: 'Email deleted successfully',
+      schema: {
+        example: {
+          success: true,
+          messageId: '18c8f1234567890a',
+          labelIds: ['TRASH'],
+        },
+      },
+    }),
+    ApiResponse({ status: 401, description: 'Unauthorized' }),
+    ApiResponse({ status: 404, description: 'Email not found' }),
   );
 

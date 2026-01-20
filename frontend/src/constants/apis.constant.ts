@@ -45,6 +45,10 @@ export const API_PATH = {
       API_PATH: (id: string) => `/mail/emails/${id}/reply`,
       API_KEY: 'replyEmail',
     },
+    FORWARD_EMAIL: {
+      API_PATH: (id: string) => `/mail/emails/${id}/forward`,
+      API_KEY: 'forwardEmail',
+    },
     SEND_EMAIL: {
       API_PATH: '/mail/emails/send',
       API_KEY: 'sendEmail',
@@ -52,6 +56,10 @@ export const API_PATH = {
     MODIFY_EMAIL: {
       API_PATH: (id: string) => `/mail/emails/${id}/modify`,
       API_KEY: 'modifyEmail',
+    },
+    DELETE_EMAIL: {
+      API_PATH: (id: string) => `/mail/emails/${id}/delete`,
+      API_KEY: 'deleteEmail',
     },
     ATTACHMENT_DOWNLOAD: {
       API_PATH: (messageId: string, attachmentId: string) =>
@@ -64,9 +72,21 @@ export const API_PATH = {
       API_PATH: '/workflows',
       API_KEY: 'getWorkflows',
     },
+    SYNC_EMAILS: {
+      API_PATH: '/mail/sync',
+      API_KEY: 'syncEmails',
+    },
     SEARCH_WORKFLOWS: {
       API_PATH: '/workflows/search',
       API_KEY: 'searchWorkflows',
+    },
+    SEARCH_SEMANTIC: {
+      API_PATH: '/workflows/search/semantic',
+      API_KEY: 'searchSemantic',
+    },
+    SUGGESTIONS: {
+      API_PATH: '/workflows/search/suggestions',
+      API_KEY: 'searchSuggestions',
     },
     UPDATE_STATUS: {
       API_PATH: (id: string) => `/workflows/${id}/status`,
@@ -75,6 +95,28 @@ export const API_PATH = {
     UPDATE_SNOOZE: {
       API_PATH: (id: string) => `/workflows/${id}/snooze`,
       API_KEY: 'updateWorkflowSnooze',
+    },
+  },
+  KANBAN: {
+    GET_COLUMNS: {
+      API_PATH: '/kanban/columns',
+      API_KEY: 'getKanbanColumns',
+    },
+    CREATE_COLUMN: {
+      API_PATH: '/kanban/columns',
+      API_KEY: 'createKanbanColumn',
+    },
+    UPDATE_COLUMN: {
+      API_PATH: (id: string) => `/kanban/columns/${id}`,
+      API_KEY: 'updateKanbanColumn',
+    },
+    DELETE_COLUMN: {
+      API_PATH: (id: string) => `/kanban/columns/${id}`,
+      API_KEY: 'deleteKanbanColumn',
+    },
+    MOVE_CARD: {
+      API_PATH: (cardId: string) => `/kanban/cards/${cardId}/move`,
+      API_KEY: 'moveKanbanCard',
     },
   },
 };
