@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Backend API (using Neon Cloud DB + Redis Cloud from .env)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: awad-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    networks:
+      - awad-network
+    command: sh -c "npx prisma migrate deploy && node dist/src/main.js"
+
+  # Frontend Next.js
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_END_POINT: http://localhost:3000
+    container_name: awad-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - ./frontend/.env.local
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    networks:
+      - awad-network
+
+networks:
+  awad-network:
+    driver: bridge
