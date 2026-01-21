@@ -14,6 +14,7 @@ This is the final project for the Advanced Web Application Development (AWAD) se
 ### Option 1: Docker (Recommended) 🐳
 
 **Prerequisites:**
+
 - Đã có file `backend/.env` (với Neon Cloud DB + Redis Cloud)
 - Đã có file `frontend/.env.local`
 - Docker Compose sẽ **tự động đọc** từ các file này
@@ -30,6 +31,7 @@ docker-compose logs -f
 ```
 
 **Access the application:**
+
 - Frontend: http://localhost:3001
 - Backend API: http://localhost:3000
 - Database: Neon Cloud (from .env)
@@ -55,7 +57,7 @@ docker-compose logs -f
 
 ### Live Demo
 
-- **Frontend**: [Update URL here]
+- **Frontend**: [https://awad.donaldmun.dev](https://awad.donaldmun.dev)
 - **Backend**: [https://awad-final-project.vercel.app](https://awad-final-project.vercel.app)
 
 For detailed deployment instructions and reproduction steps, please refer to:
