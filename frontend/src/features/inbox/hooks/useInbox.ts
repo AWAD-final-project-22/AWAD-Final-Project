@@ -48,6 +48,8 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const [showEmailDetail, setShowEmailDetail] = useState(false);
 
   const pPage = searchParams.get(PARAMS_URL.PAGE) || PAGE_DEFAULT;
+  const currentPage = Number(pPage) || PAGE_DEFAULT;
+  const pageSize = Number(LIMIT_DEFAULT);
   const pSearchQuery = searchParams.get(PARAMS_URL.SEARCH_EMAIL) || '';
 
   // Sync searchText with URL query param
@@ -58,7 +60,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
   const { data: mailboxes, isLoading: isMailboxesLoading } = useGetMailBoxes();
 
   const { data: emails, isLoading: isEmailsLoading } = useGetEmailsByMailBoxId(
-    { page: Number(pPage), limit: Number(LIMIT_DEFAULT) },
+    { page: currentPage, limit: pageSize },
     selectedMailbox,
   );
 
@@ -475,5 +477,7 @@ export const useInbox = ({ mailBoxID, mailID, isMobile }: InBoxProps) => {
 
     handlePageChange,
     handleSearch,
+    currentPage,
+    pageSize,
   };
 };

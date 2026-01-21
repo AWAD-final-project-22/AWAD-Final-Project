@@ -197,6 +197,32 @@ export const useKanban = ({ mailboxId = 'INBOX' }: UseKanbanProps = {}) => {
     refetchEmails();
   }, [refetchInbox, refetchTodo, refetchDone, refetchSnoozed, refetchEmails]);
 
+  useEffect(() => {
+    if (!isOnline) return;
+    const snoozedData = snoozedWorkflows?.data || [];
+    if (snoozedData.length === 0) return;
+
+    const snoozedTimes = snoozedData
+      .map((workflow) => workflow.snoozedUntil)
+      .filter((value): value is string => Boolean(value))
+      .map((value) => new Date(value).getTime())
+      .filter((time) => !Number.isNaN(time));
+
+    if (snoozedTimes.length === 0) return;
+
+    const nextSnoozeAt = Math.min(...snoozedTimes);
+    const now = Date.now();
+    const bufferMs = 5000;
+    const delayMs =
+      nextSnoozeAt > now ? nextSnoozeAt - now + bufferMs : 30000;
+
+    const timeoutId = setTimeout(() => {
+      refetchAllWorkflows();
+    }, delayMs);
+
+    return () => clearTimeout(timeoutId);
+  }, [isOnline, snoozedWorkflows?.data, refetchAllWorkflows]);
+
   const transformWorkflowToKanbanEmail = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (workflow: any): IKanbanEmail => {

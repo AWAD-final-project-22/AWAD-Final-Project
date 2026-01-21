@@ -87,6 +87,7 @@ export class GmailController {
     @Req() req: any, 
     @Param('mailboxId') mailboxId: string,
     @Query('limit') limit?: string,
+    @Query('page') page?: string,
     @Query('offset') offset?: string,
     @Query('sortBy') sortBy?: 'date_newest' | 'date_oldest',
     @Query('unreadOnly') unreadOnly?: string,
@@ -94,7 +95,12 @@ export class GmailController {
   ) {
     const mbId = mailboxId || 'inbox';
     const limitNum = limit ? parseInt(limit, 10) : 20;
-    const offsetNum = offset ? parseInt(offset, 10) : 0;
+    const pageNum = page ? parseInt(page, 10) : undefined;
+    const offsetNum = pageNum && pageNum > 0
+      ? (pageNum - 1) * limitNum
+      : offset
+        ? parseInt(offset, 10)
+        : 0;
 
     const filterOptions = {
       sortBy: sortBy || 'date_newest',
