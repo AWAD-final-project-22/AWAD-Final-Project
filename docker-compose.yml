@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # Redis Cache (Internal Only)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: awad-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass awad-redis-secure-2024
+    volumes:
+      - redis-data:/data
+    networks:
+      - awad-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "awad-redis-secure-2024", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ============================================
+  # Backend API (using Neon Cloud DB + Local Redis)
+  # ============================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: awad-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - awad-network
+    command: sh -c "npx prisma migrate deploy && node dist/src/main.js"
+
+  # ============================================
+  # Frontend Next.js
+  # ============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_END_POINT: https://awad-backend.donaldmun.dev
+    container_name: awad-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - ./frontend/.env.local
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_END_POINT: https://awad-backend.donaldmun.dev
+    ports:
+      - "3001:3001"
+    networks:
+      - awad-network
+
+networks:
+  awad-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

@@ -39,6 +39,8 @@ interface EmailListPanelProps {
   isMobile?: boolean;
   selectedEmail: IEmail | undefined;
   handlePageChange: (page: number) => void;
+  currentPage: number;
+  pageSize: number;
   handleDeleteEmail: (emailId: string) => Promise<void>;
   handleMarkAsRead?: (emailIds: string[]) => Promise<void>;
   handleToggleStar?: (emailId: string, isStarred: boolean) => Promise<void>;
@@ -55,6 +57,8 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
   selectedEmail,
   isEmailsLoading = false,
   handlePageChange,
+  currentPage,
+  pageSize,
   emails,
   handleDeleteEmail,
   handleMarkAsRead,
@@ -217,7 +221,8 @@ export const EmailListPanel: React.FC<EmailListPanelProps> = ({
         <Pagination
           size='small'
           total={emails?.total || 0}
-          pageSize={20}
+          current={currentPage}
+          pageSize={pageSize}
           showSizeChanger={false}
           style={{ padding: '8px', textAlign: 'center' }}
           onChange={(e) => handlePageChange(e)}

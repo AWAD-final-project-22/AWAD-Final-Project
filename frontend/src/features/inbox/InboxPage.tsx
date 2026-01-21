@@ -67,6 +67,8 @@ const InboxPage: React.FC = () => {
     handleToggleStar,
     handleMarkAsRead,
     handleDeleteEmail,
+    currentPage,
+    pageSize,
   } = useInbox({ isMobile, mailID: emailIdFromUrl || undefined });
 
   useEffect(() => {
@@ -155,6 +157,8 @@ const InboxPage: React.FC = () => {
               selectedEmail={selectedEmailData}
               isEmailsLoading={isEmailsLoading}
               handlePageChange={handlePageChange}
+              currentPage={currentPage}
+              pageSize={pageSize}
               emails={emails}
               handleMarkAsRead={handleMarkAsRead}
               handleToggleStar={handleToggleStar}

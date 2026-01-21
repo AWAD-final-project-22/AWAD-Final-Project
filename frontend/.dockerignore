@@ -1,11 +1,47 @@
+# Dependencies
 node_modules
+
+# Build output
 .next
 out
 dist
-coverage
-.git
+build
+
+# Environment files
 .env
 .env.*
+*.local
+
+# Git
+.git
+.gitignore
+
+# Docker files
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage
+.nyc_output
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Next.js specific
+.vercel
+.turbo

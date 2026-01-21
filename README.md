@@ -11,12 +11,42 @@ This is the final project for the Advanced Web Application Development (AWAD) se
 
 ## 🚀 Quick Start
 
-### Backend
+### Option 1: Docker (Recommended) 🐳
+
+**Prerequisites:**
+- Đã có file `backend/.env` (với Neon Cloud DB + Redis Cloud)
+- Đã có file `frontend/.env.local`
+- Docker Compose sẽ **tự động đọc** từ các file này
+
+**One command to run everything:**
+
+```bash
+# Start services (Backend + Frontend)
+# Backend sẽ connect tới cloud services từ .env
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+**Access the application:**
+- Frontend: http://localhost:3001
+- Backend API: http://localhost:3000
+- Database: Neon Cloud (from .env)
+- Redis: Redis Cloud (from .env)
+
+📚 **Full Docker guide**: [README.DOCKER.md](README.DOCKER.md)
+
+---
+
+### Option 2: Manual Setup
+
+#### Backend
 
 1.  Navigate to `backend/`.
 2.  Follow the instructions in [backend/README.md](backend/README.md) to setup and run the server.
 
-### Frontend
+#### Frontend
 
 1.  Navigate to `frontend/`.
 2.  Follow the instructions in [frontend/README.md](frontend/README.md) to setup and run the client.
